@@ -1,0 +1,188 @@
+version: "3.9"
+
+services:
+  postgres-primary:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: twitter
+      POSTGRES_USER: twitter
+      POSTGRES_PASSWORD: twitter
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256\nhost replication replicator 0.0.0.0/0 scram-sha-256"
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command: |
+      postgres
+      -c wal_level=replica
+      -c max_wal_senders=3
+      -c max_replication_slots=3
+      -c hot_standby=on
+    volumes:
+      - pg_primary_data:/var/lib/postgresql/data
+      - ./pkg/db/migrations:/docker-entrypoint-initdb.d
+      - ./scripts/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twitter"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-replica1:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: twitter
+      PGPASSWORD: twitter
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    entrypoint: |
+      bash -c "
+        rm -rf /var/lib/postgresql/data/*
+        pg_basebackup -h postgres-primary -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R
+        exec postgres -c hot_standby=on
+      "
+    volumes:
+      - pg_replica1_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  postgres-replica2:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: twitter
+      PGPASSWORD: twitter
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    entrypoint: |
+      bash -c "
+        rm -rf /var/lib/postgresql/data/*
+        pg_basebackup -h postgres-primary -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R
+        exec postgres -c hot_standby=on
+      "
+    volumes:
+      - pg_replica2_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --save "" --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./deployments/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: user
+    environment:
+      SERVICE_NAME: user-service
+      PORT: 8081
+      POSTGRES_PRIMARY_URL: postgres://twitter:twitter@postgres-primary:5432/twitter
+      POSTGRES_REPLICA_URLS: postgres://twitter:twitter@postgres-replica1:5432/twitter,postgres://twitter:twitter@postgres-replica2:5432/twitter
+      REDIS_ADDR: redis:6379
+      JWT_SECRET: supersecretjwtkey
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  tweet-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: tweet
+    environment:
+      SERVICE_NAME: tweet-service
+      PORT: 8082
+      POSTGRES_PRIMARY_URL: postgres://twitter:twitter@postgres-primary:5432/twitter
+      POSTGRES_REPLICA_URLS: postgres://twitter:twitter@postgres-replica1:5432/twitter,postgres://twitter:twitter@postgres-replica2:5432/twitter
+      REDIS_ADDR: redis:6379
+      JWT_SECRET: supersecretjwtkey
+      FANOUT_STRATEGY: write
+      CONSISTENCY_MODE: eventual
+      USER_SERVICE_URL: http://user-service:8081
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  timeline-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: timeline
+    environment:
+      SERVICE_NAME: timeline-service
+      PORT: 8083
+      POSTGRES_PRIMARY_URL: postgres://twitter:twitter@postgres-primary:5432/twitter
+      POSTGRES_REPLICA_URLS: postgres://twitter:twitter@postgres-replica1:5432/twitter,postgres://twitter:twitter@postgres-replica2:5432/twitter
+      REDIS_ADDR: redis:6379
+      JWT_SECRET: supersecretjwtkey
+      FANOUT_STRATEGY: write
+      TWEET_SERVICE_URL: http://tweet-service:8082
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: gateway
+    environment:
+      SERVICE_NAME: gateway
+      PORT: 8080
+      REDIS_ADDR: redis:6379
+      JWT_SECRET: supersecretjwtkey
+      USER_SERVICE_URL: http://user-service:8081
+      TWEET_SERVICE_URL: http://tweet-service:8082
+      TIMELINE_SERVICE_URL: http://timeline-service:8083
+      RATE_LIMIT_RPM: 60
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - tweet-service
+      - timeline-service
+
+volumes:
+  pg_primary_data:
+  pg_replica1_data:
+  pg_replica2_data:
