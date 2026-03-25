@@ -1,0 +1,29 @@
+.DS_Store
+
+# Terraform
+terraform.tfvars
+*.tfplan
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.backup
+
+# Docker
+**/docker-gs-ping
+**/*.tar
+**/*.zip
+
+# Go build artifacts
+**/*.exe
+**/*.out
+**/*.bin
+*.test
+
+# python cache files
+__pycache__/
+*.pyc
+
+# env files
+.env
+.env.*
+*.pem
+*.key
