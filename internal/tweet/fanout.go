@@ -9,7 +9,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	"github.com/yourorg/mini-twitter/pkg/cache"
-	"github.com/yourorg/mini-twitter/pkg/metrics"
 )
 
 const (
@@ -63,12 +62,10 @@ func (fw *FanoutWorker) Start(ctx context.Context) {
 // If the channel is full it drops the job (non-blocking) and logs a warning,
 // rather than blocking the caller (tweet creation) indefinitely.
 func (fw *FanoutWorker) Enqueue(job FanoutJob) {
-	metrics.FanoutQueueDepth.Inc() // track queue depth for alerting
 	select {
 	case fw.jobs <- job: // successfully queued
 	default:
 		// Channel full: shed load to protect the service
-		metrics.FanoutQueueDepth.Dec()
 		fw.log.Warn().Str("tweet_id", job.TweetID.String()).Msg("fanout queue full, skipping fan-out")
 	}
 }
@@ -80,12 +77,9 @@ func (fw *FanoutWorker) work(ctx context.Context) {
 		case <-ctx.Done():
 			return // context cancelled (service shutdown); exit the goroutine
 		case job := <-fw.jobs:
-			metrics.FanoutQueueDepth.Dec()
-			start := time.Now()
 			if err := fw.fanout(ctx, job); err != nil {
 				fw.log.Error().Err(err).Str("tweet_id", job.TweetID.String()).Msg("fanout error")
 			}
-			metrics.FanoutJobDuration.Observe(time.Since(start).Seconds())
 		}
 	}
 }

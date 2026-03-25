@@ -16,7 +16,6 @@ import (
 	"github.com/yourorg/mini-twitter/pkg/cache"
 	"github.com/yourorg/mini-twitter/pkg/config"
 	"github.com/yourorg/mini-twitter/pkg/logger"
-	"github.com/yourorg/mini-twitter/pkg/metrics"
 )
 
 func main() {
@@ -56,7 +55,6 @@ func main() {
 	r.Use(rateLimiter.Middleware) // enforce per-IP request rate limits
 	r.Use(gateway.JWTPassthrough(authMgr)) // forward JWT headers; validation happens inside each service
 	r.Mount("/", h.Routes())               // mount all proxy routes under "/"
-	r.Handle("/metrics", metrics.Handler()) // expose Prometheus metrics
 
 	// Format the listen address, e.g. ":8080"
 	addr := fmt.Sprintf(":%d", cfg.Port)

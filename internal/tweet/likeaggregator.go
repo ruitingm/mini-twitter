@@ -8,7 +8,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	"github.com/yourorg/mini-twitter/pkg/cache"
-	"github.com/yourorg/mini-twitter/pkg/metrics"
 )
 
 // LikeAggregator batches like/unlike operations that arrive in Redis and
@@ -79,7 +78,6 @@ func (la *LikeAggregator) flush(ctx context.Context, pending map[uuid.UUID]struc
 	}
 
 	flushTime := time.Now()
-	metrics.LikeAggregatorFlushTotal.Inc() // increment Prometheus counter
 
 	for tweetID := range pending {
 		key := cache.LikeCountKey(tweetID.String())

@@ -38,8 +38,9 @@ services:
     entrypoint: |
       bash -c "
         rm -rf /var/lib/postgresql/data/*
-        pg_basebackup -h postgres-primary -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R
-        exec postgres -c hot_standby=on
+        PGPASSWORD=twitter pg_basebackup -h postgres-primary -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R
+        chown -R postgres:postgres /var/lib/postgresql/data
+        exec gosu postgres postgres -c hot_standby=on
       "
     volumes:
       - pg_replica1_data:/var/lib/postgresql/data
@@ -57,8 +58,9 @@ services:
     entrypoint: |
       bash -c "
         rm -rf /var/lib/postgresql/data/*
-        pg_basebackup -h postgres-primary -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R
-        exec postgres -c hot_standby=on
+        PGPASSWORD=twitter pg_basebackup -h postgres-primary -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R
+        chown -R postgres:postgres /var/lib/postgresql/data
+        exec gosu postgres postgres -c hot_standby=on
       "
     volumes:
       - pg_replica2_data:/var/lib/postgresql/data
@@ -76,12 +78,6 @@ services:
       timeout: 3s
       retries: 5
 
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./deployments/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
 
   jaeger:
     image: jaegertracing/all-in-one:latest
@@ -126,8 +122,8 @@ services:
       POSTGRES_REPLICA_URLS: postgres://twitter:twitter@postgres-replica1:5432/twitter,postgres://twitter:twitter@postgres-replica2:5432/twitter
       REDIS_ADDR: redis:6379
       JWT_SECRET: supersecretjwtkey
-      FANOUT_STRATEGY: write
-      CONSISTENCY_MODE: eventual
+      FANOUT_STRATEGY: ${FANOUT_STRATEGY:-write}
+      CONSISTENCY_MODE: ${CONSISTENCY_MODE:-eventual}
       USER_SERVICE_URL: http://user-service:8081
     ports:
       - "8082:8082"
@@ -150,7 +146,7 @@ services:
       POSTGRES_REPLICA_URLS: postgres://twitter:twitter@postgres-replica1:5432/twitter,postgres://twitter:twitter@postgres-replica2:5432/twitter
       REDIS_ADDR: redis:6379
       JWT_SECRET: supersecretjwtkey
-      FANOUT_STRATEGY: write
+      FANOUT_STRATEGY: ${FANOUT_STRATEGY:-write}
       TWEET_SERVICE_URL: http://tweet-service:8082
     ports:
       - "8083:8083"
@@ -169,6 +165,7 @@ services:
     environment:
       SERVICE_NAME: gateway
       PORT: 8080
+      POSTGRES_PRIMARY_URL: postgres://twitter:twitter@postgres-primary:5432/twitter
       REDIS_ADDR: redis:6379
       JWT_SECRET: supersecretjwtkey
       USER_SERVICE_URL: http://user-service:8081

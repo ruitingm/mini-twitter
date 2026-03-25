@@ -18,7 +18,6 @@ import (
 	"github.com/yourorg/mini-twitter/pkg/config"
 	"github.com/yourorg/mini-twitter/pkg/db"
 	"github.com/yourorg/mini-twitter/pkg/logger"
-	"github.com/yourorg/mini-twitter/pkg/metrics"
 )
 
 func main() {
@@ -66,7 +65,6 @@ func main() {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 	r.Mount("/v1", h.Routes(auth.Middleware(authMgr)))
-	r.Handle("/metrics", metrics.Handler())
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{Addr: addr, Handler: r}

@@ -1,0 +1,150 @@
+# Codebase Walkthrough: Mini-Twitter Distributed Social Media Backend
+
+## Architecture Overview
+
+The codebase implements a microservices-based Twitter clone with four containerized Go services as specified in your proposal:
+
+### 1. **API Gateway** (cmd/gateway/main.go:22-83, internal/gateway/)
+- **Purpose**: Routes requests, enforces rate limiting, aggregates responses
+- **Key Components**:
+  - Rate limiter backed by Redis (internal/gateway/middleware.go)
+  - JWT passthrough middleware (gateway.JWTPassthrough())
+  - Reverse proxy handler routing to internal services
+- **Configuration**: Runs on port 8080, configured via environment variables
+
+### 2. **User Service** (cmd/user/main.go:22-73, internal/user/)
+- **Purpose**: Manages authentication, profiles, and follow/unfollow relationships
+- **Repository Layer** (internal/user/repository.go): Raw SQL queries for users and follows
+- **Service Layer** (internal/user/service.go): Business logic for registration, login, follow/unfollow
+- **Handler Layer** (internal/user/handler.go): HTTP request/response translation
+- **Database**: Uses primary for writes, read replicas for queries
+
+### 3. **Tweet Service** (cmd/tweet/main.go, internal/tweet/)
+- **Purpose**: Handles tweet CRUD, likes, and fan-out operations
+- **Key Features**:
+  - **Configurable fanout strategy** (internal/tweet/service.go:24-25):
+    - "write": Push tweet IDs to follower timelines at creation time
+    - "read": Timeline service fetches on demand
+  - **Configurable consistency mode** for likes (internal/tweet/service.go:75-96):
+    - "strong": Synchronous PostgreSQL updates
+    - "eventual": Redis counter with background aggregation
+  - **Fan-out Worker** (internal/tweet/fanout.go:35-130): Pushes tweets to follower timelines
+  - **Like Aggregator** (internal/tweet/likeaggregator.go:17-115): Batches like operations
+
+### 4. **Timeline Service** (cmd/timeline/main.go, internal/timeline/)
+- **Purpose**: Serves materialized feeds from Redis with PostgreSQL fallback
+- **Service Implementation** (internal/timeline/service.go:35-154):
+  - GetHomeTimeline: Redis-first with DB fallback
+  - GetUserTimeline: Direct DB queries
+  - Tweet enrichment via batch API calls to tweet service
+- **Cache Strategy**: 1000-tweet cache per user, 24-hour TTL
+
+## Data Layer Implementation
+
+### PostgreSQL Schema
+- **users table** (pkg/db/migrations/001_users.sql:1-13): Core user data with follower/following counts
+- **tweets table** (pkg/db/migrations/002_tweets.sql:1-10): Tweet content with like_count column
+- **follows table** (pkg/db/migrations/003_follows.sql:1-8): Many-to-many follower relationships
+- **likes table** (pkg/db/migrations/004_likes.sql:1-7): User-tweet like relationships
+- **like_count_pending table** (pkg/db/migrations/004_likes.sql:9-14): Durability layer for eventual consistency
+
+### Redis Cache Strategy
+- **Timeline lists**: timeline:{user_id} - Ordered tweet IDs
+- **Like counters**: like_count:{tweet_id} - Real-time counts
+- **Rate limiting**: Per-IP counters for gateway throttling
+
+### Database Replication (docker-compose.yml:4-66)
+- Primary PostgreSQL instance with WAL streaming
+- Two read replicas (postgres-replica1, postgres-replica2)
+- Automatic failover handling in pkg/db/postgres.go
+
+## Experiment-Ready Features
+
+### 1. Fan-out Strategy Configuration
+- **Environment variable**: FANOUT_STRATEGY in docker-compose.yml:129
+- **Implementation**: internal/tweet/service.go:51-64 (write mode), internal/timeline/service.go:84-101 (read mode)
+- Easily switchable between experiments without code changes
+
+### 2. Consistency Mode Configuration
+- **Environment variable**: CONSISTENCY_MODE in docker-compose.yml:130
+- **Strong consistency path**: internal/tweet/service.go:80-83
+- **Eventual consistency path**: internal/tweet/service.go:84-95
+- Like aggregator runs on configurable interval
+
+### 3. Failure Resilience Features
+- **Read replica failover**: Built into pkg/db/postgres.go
+- **Redis fallback**: Timeline service falls back to PostgreSQL (internal/timeline/service.go:66-81)
+- **Circuit breaker pattern**: Rate limiter sheds load under pressure
+
+## Monitoring & Observability
+
+### Structured Logging (pkg/logger/logger.go)
+- Zerolog with service tagging
+- Request ID tracking via middleware
+- Error context preservation
+
+### Docker Compose Services (docker-compose.yml:79-93)
+- Jaeger for distributed tracing (OTLP enabled)
+- Health checks on all services
+
+## Missing Components from Proposal
+
+### 1. **Terraform Infrastructure** ❌
+- No AWS ECS task definitions
+- No Auto Scaling configurations
+- No VPC/networking setup
+- No RDS/ElastiCache resources
+
+### 2. **S3 Integration** ❌
+- No media upload handling
+- No profile image storage
+- Would need presigned URL generation
+
+### 3. **Background Workers** ⚠️ Partial
+- Fan-out worker exists
+- Like aggregator exists
+- Missing: Dead letter queue handling
+- Missing: Retry logic with exponential backoff
+
+### 4. **Load Testing Scripts** ❌
+- No synthetic load generation
+- Would need for experiments
+
+### 5. **Experiment Automation** ❌
+- Manual configuration switching only
+- No automated metrics collection
+
+
+## Key Implementation Highlights
+
+### Fan-out-on-Write Implementation (internal/tweet/fanout.go:95-130)
+- Paginated follower fetching (500 at a time)
+- Redis pipeline for batch updates
+- Non-blocking job queue with load shedding
+
+### Eventual Consistency Implementation (internal/tweet/likeaggregator.go:76-115)
+- Redis GETDEL for atomic delta retrieval
+- PostgreSQL fallback for durability
+- Batch updates to reduce write load
+
+### Rate Limiting (internal/gateway/middleware.go)
+- Per-IP tracking in Redis
+- Configurable requests per minute
+- HTTP 429 responses when exceeded
+
+## Development & Testing
+
+### Local Development (Makefile:1-45)
+make up      # Start all services via Docker Compose
+make build   # Build all service binaries
+make test    # Run test suite
+make migrate # Apply database migrations
+
+### Service Endpoints
+- Gateway: http://localhost:8080
+- User Service: http://localhost:8081
+- Tweet Service: http://localhost:8082
+- Timeline Service: http://localhost:8083
+- Jaeger UI: http://localhost:16686
+
+This codebase provides a solid foundation for your distributed systems experiments, with the key architectural decisions (fan-out strategy, consistency model) configurable via environment variables to support your planned testing scenarios.

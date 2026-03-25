@@ -9,7 +9,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/yourorg/mini-twitter/pkg/cache"
 	"github.com/yourorg/mini-twitter/pkg/db"
-	"github.com/yourorg/mini-twitter/pkg/metrics"
 )
 
 // Repository handles all data access (Postgres + Redis) for timelines.
@@ -32,15 +31,12 @@ func (r *Repository) GetHomeTimelineIDs(ctx context.Context, userID uuid.UUID, l
 	strs, err := r.redis.LRange(ctx, key, 0, int64(limit-1)).Result()
 	if err == redis.Nil || len(strs) == 0 {
 		// Key doesn't exist or list is empty → cache miss
-		metrics.RedisMisses.WithLabelValues("timeline").Inc()
 		return nil, false, nil
 	}
 	if err != nil {
 		r.log.Warn().Err(err).Msg("redis lrange failed")
-		metrics.RedisMisses.WithLabelValues("timeline").Inc()
 		return nil, false, nil
 	}
-	metrics.RedisHits.WithLabelValues("timeline").Inc()
 	// Convert the string UUID slice returned by Redis into []uuid.UUID
 	ids := make([]uuid.UUID, 0, len(strs))
 	for _, s := range strs {
