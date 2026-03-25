@@ -7,8 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
-	"github.com/yourorg/mini-twitter/pkg/cache"
-	"github.com/yourorg/mini-twitter/pkg/db"
+	"mini-twitter/pkg/cache"
+	"mini-twitter/pkg/db"
 )
 
 // Repository handles all data access (Postgres + Redis) for timelines.

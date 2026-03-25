@@ -11,13 +11,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/yourorg/mini-twitter/internal/tweet"
-	"github.com/yourorg/mini-twitter/internal/user"
-	"github.com/yourorg/mini-twitter/pkg/auth"
-	"github.com/yourorg/mini-twitter/pkg/cache"
-	"github.com/yourorg/mini-twitter/pkg/config"
-	"github.com/yourorg/mini-twitter/pkg/db"
-	"github.com/yourorg/mini-twitter/pkg/logger"
+	"mini-twitter/internal/tweet"
+	"mini-twitter/internal/user"
+	"mini-twitter/pkg/auth"
+	"mini-twitter/pkg/cache"
+	"mini-twitter/pkg/config"
+	"mini-twitter/pkg/db"
+	"mini-twitter/pkg/logger"
 )
 
 func main() {

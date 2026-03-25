@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/yourorg/mini-twitter/pkg/db"
+	"mini-twitter/pkg/db"
 )
 
 // Tweet is the core domain model for a tweet stored in Postgres.

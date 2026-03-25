@@ -1,4 +1,4 @@
-module github.com/yourorg/mini-twitter
+module mini-twitter
 
 go 1.25.0
 

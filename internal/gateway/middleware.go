@@ -7,8 +7,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
-	"github.com/yourorg/mini-twitter/pkg/auth"
-	"github.com/yourorg/mini-twitter/pkg/cache"
+	"mini-twitter/pkg/auth"
+	"mini-twitter/pkg/cache"
 )
 
 // RateLimiter implements token-bucket rate limiting per IP using Redis.

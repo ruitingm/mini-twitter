@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
-	"github.com/yourorg/mini-twitter/pkg/cache"
+	"mini-twitter/pkg/cache"
 )
 
 // Service implements the tweet domain business logic.

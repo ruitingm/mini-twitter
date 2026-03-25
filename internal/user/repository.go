@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/yourorg/mini-twitter/pkg/db"
+	"mini-twitter/pkg/db"
 )
 
 // User is the domain model for a registered account.

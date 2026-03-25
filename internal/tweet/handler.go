@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
-	"github.com/yourorg/mini-twitter/pkg/auth"
+	"mini-twitter/pkg/auth"
 )
 
 // Handler holds the service layer and logger for tweet HTTP endpoints.

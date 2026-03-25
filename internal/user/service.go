@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/yourorg/mini-twitter/pkg/auth"
+	"mini-twitter/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
