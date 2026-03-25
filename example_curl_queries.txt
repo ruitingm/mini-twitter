@@ -3,7 +3,6 @@
 
 ## Prerequisites
 # Ensure services are running: docker-compose up --build
-# Install jq for JSON parsing: brew install jq (macOS) or apt-get install jq (Linux)
 
 # ====================================================================
 # 1. USER REGISTRATION & AUTHENTICATION
@@ -299,9 +298,8 @@ curl http://localhost:8080/v1/tweets \
 # ====================================================================
 
 # Connect to database using one of these methods:
-# Method 1: psql postgres://twitter:twitter@localhost:5432/twitter
-# Method 2: docker exec -it postgres-primary-1 psql -U twitter -d twitter  
-# Method 3: docker-compose exec postgres-primary psql -U twitter -d twitter
+# Method 1: docker exec -it postgres-primary-1 psql -U twitter -d twitter  
+# Method 2: docker-compose exec postgres-primary psql -U twitter -d twitter
 
 ## Once connected to PostgreSQL, run these queries:
 

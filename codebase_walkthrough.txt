@@ -89,30 +89,32 @@ The codebase implements a microservices-based Twitter clone with four containeri
 
 ## Missing Components from Proposal
 
-### 1. **Terraform Infrastructure** ❌
-- No AWS ECS task definitions
-- No Auto Scaling configurations
-- No VPC/networking setup
-- No RDS/ElastiCache resources
+### 1. **Terraform Infrastructure** ✅ **IMPLEMENTED**
+- ✅ AWS ECS task definitions for 4 microservices
+- ✅ Application Load Balancer with path-based routing
+- ✅ VPC/networking with security groups
+- ✅ RDS PostgreSQL with 2 read replicas
+- ✅ ElastiCache Redis cluster
+- ✅ ECR repositories for Docker images
+- ✅ Configurable experiment variables (fanout_strategy, consistency_mode)
 
-### 2. **S3 Integration** ❌
-- No media upload handling
-- No profile image storage
-- Would need presigned URL generation
+### 2. **Load Testing Scripts** ❌
+- No Locust load testing scripts
+- Would need for performance experiments
+- Should include user registration, tweet creation, timeline fetching patterns
 
-### 3. **Background Workers** ⚠️ Partial
-- Fan-out worker exists
-- Like aggregator exists
-- Missing: Dead letter queue handling
-- Missing: Retry logic with exponential backoff
+### 3. **Experiment Automation** ⚠️ **PARTIAL**
+- ✅ Environment variables for fanout strategy (write/read)
+- ✅ Environment variables for consistency mode (eventual/strong)
+- ✅ Configurable via Terraform variables
+- ❌ No automated A/B testing framework
+- ❌ No automated metrics collection and comparison
+- ❌ No automated experiment result analysis
 
-### 4. **Load Testing Scripts** ❌
-- No synthetic load generation
-- Would need for experiments
-
-### 5. **Experiment Automation** ❌
-- Manual configuration switching only
-- No automated metrics collection
+### 4. **Optional Improvements**
+- **Jaeger Distributed Tracing**: For detailed request flow analysis across microservices
+- **Dead Letter Queues**: For failed message handling (current implementation has basic retry)
+- **Background Job Queues**: Beyond current Redis-based fanout worker
 
 
 ## Key Implementation Highlights
@@ -145,6 +147,3 @@ make migrate # Apply database migrations
 - User Service: http://localhost:8081
 - Tweet Service: http://localhost:8082
 - Timeline Service: http://localhost:8083
-- Jaeger UI: http://localhost:16686
-
-This codebase provides a solid foundation for your distributed systems experiments, with the key architectural decisions (fan-out strategy, consistency model) configurable via environment variables to support your planned testing scenarios.
