@@ -57,6 +57,7 @@ func main() {
 	r.Use(middleware.Recoverer) // recover from panics
 	// Mount routes under /v1; home timeline requires auth, user timeline is public
 	r.Mount("/v1", h.Routes(auth.Middleware(authMgr)))
+	r.Mount("/internal/timeline/v1", h.Routes(auth.Middleware(authMgr)))
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{Addr: addr, Handler: r}

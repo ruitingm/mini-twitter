@@ -46,6 +46,7 @@ func main() {
 	r.Use(middleware.Recoverer) // converts panics into 500 responses
 	// Protected routes (UpdateMe, Follow, Unfollow) sit behind the JWT auth middleware
 	r.Mount("/v1", h.Routes(auth.Middleware(authMgr)))
+	r.Mount("/internal/user/v1", h.Routes(auth.Middleware(authMgr)))
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{Addr: addr, Handler: r}

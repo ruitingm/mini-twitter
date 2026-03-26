@@ -59,6 +59,14 @@ resource "aws_security_group" "this" {
     description = "Allow service-to-service communication"
   }
 
+  ingress {
+    from_port       = 8080
+    to_port         = 8083
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+    description     = "Allow ALB health checks and traffic to all service ports"
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -125,7 +133,7 @@ resource "aws_lb_target_group" "gateway" {
     timeout             = 5
     interval            = 30
     path                = "/"
-    matcher             = "200"
+    matcher             = "200,404"
   }
 
   tags = {

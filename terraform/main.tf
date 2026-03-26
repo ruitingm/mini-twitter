@@ -84,7 +84,7 @@ module "ecs_user" {
   db_name          = module.rds.db_name
   db_username      = var.db_username
   db_password      = var.db_password
-  db_replica_urls  = join(",", module.rds.replica_endpoints)
+  db_replica_urls  = join(",", module.rds.replica_connection_strings)
   jwt_secret       = "supersecretjwtkey"
   target_group_arn = module.network.user_target_group_arn
 }
@@ -109,7 +109,7 @@ module "ecs_tweet" {
   db_name             = module.rds.db_name
   db_username         = var.db_username
   db_password         = var.db_password
-  db_replica_urls     = join(",", module.rds.replica_endpoints)
+  db_replica_urls     = join(",", module.rds.replica_connection_strings)
   redis_addr          = module.elasticache.endpoint
   user_service_url    = "http://${module.network.alb_dns_name}/internal/user"
   fanout_strategy     = var.fanout_strategy
@@ -138,7 +138,7 @@ module "ecs_timeline" {
   db_name          = module.rds.db_name
   db_username      = var.db_username
   db_password      = var.db_password
-  db_replica_urls  = join(",", module.rds.replica_endpoints)
+  db_replica_urls  = join(",", module.rds.replica_connection_strings)
   redis_addr       = module.elasticache.endpoint
   tweet_service_url = "http://${module.network.alb_dns_name}/internal/tweet"
   fanout_strategy  = var.fanout_strategy
@@ -153,8 +153,8 @@ resource "docker_image" "gateway" {
   build {
     context = ".."
     dockerfile = "Dockerfile"
-    args = {
-      SERVICE = "gateway"
+    build_args = {
+      SERVICE : "gateway"
     }
   }
   triggers = {
@@ -167,8 +167,8 @@ resource "docker_image" "user" {
   build {
     context = ".."
     dockerfile = "Dockerfile"
-    args = {
-      SERVICE = "user"
+    build_args = {
+      SERVICE : "user"
     }
   }
   triggers = {
@@ -181,8 +181,8 @@ resource "docker_image" "tweet" {
   build {
     context = ".."
     dockerfile = "Dockerfile"
-    args = {
-      SERVICE = "tweet"
+    build_args = {
+      SERVICE : "tweet"
     }
   }
   triggers = {
@@ -195,8 +195,8 @@ resource "docker_image" "timeline" {
   build {
     context = ".."
     dockerfile = "Dockerfile"
-    args = {
-      SERVICE = "timeline"
+    build_args = {
+      SERVICE : "timeline"
     }
   }
   triggers = {

@@ -65,6 +65,7 @@ func main() {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 	r.Mount("/v1", h.Routes(auth.Middleware(authMgr)))
+	r.Mount("/internal/tweet/v1", h.Routes(auth.Middleware(authMgr)))
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{Addr: addr, Handler: r}

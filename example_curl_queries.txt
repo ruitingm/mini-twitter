@@ -13,6 +13,10 @@ curl -X POST http://localhost:8080/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"alice","email":"alice@example.com","password":"password123"}'
 
+curl -X POST http://mini-twitter-alb-217585795.us-west-2.elb.amazonaws.com/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","email":"alice@example.com","password":"password123"}'
+
 # Expected response: {"token":"...", "user":{"id":"uuid","username":"alice",...}}
 # Save the user ID for later use
 

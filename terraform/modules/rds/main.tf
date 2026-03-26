@@ -33,7 +33,7 @@ resource "aws_db_instance" "this" {
   identifier = "${var.service_name}-postgres-primary"
 
   engine         = "postgres"
-  engine_version = "16.2"
+  engine_version = "16.6"
   instance_class = "db.t3.micro"
 
   allocated_storage = 20

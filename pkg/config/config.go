@@ -15,7 +15,7 @@ type Config struct {
 	Port        int    `envconfig:"PORT" default:"8080"` // HTTP listen port
 
 	// Database — primary handles writes; replicas handle reads
-	PostgresPrimaryURL  string   `envconfig:"POSTGRES_PRIMARY_URL" required:"true"`
+	PostgresPrimaryURL  string   `envconfig:"POSTGRES_PRIMARY_URL"`
 	PostgresReplicaURLs []string `envconfig:"POSTGRES_REPLICA_URLS"` // comma-separated list; optional
 
 	// Redis — single node; used for timelines, rate limiting, and like counts
