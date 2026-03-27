@@ -11,9 +11,9 @@ import (
 )
 
 // Service implements the tweet domain business logic.
-// It supports two fanout strategies and two consistency modes:
-//   - fanoutStrategy "write": push tweet IDs to follower timelines at creation time
-//   - fanoutStrategy "read":  timeline service fetches tweet IDs on demand
+// It supports Redis caching vs PostgreSQL and two consistency modes:
+//   - useRedis=true:  push tweet IDs to follower timelines via Redis (fan-out-on-write)
+//   - useRedis=false: timeline service fetches tweet IDs from PostgreSQL on demand
 //   - consistencyMode "strong":   like counts are updated synchronously in Postgres
 //   - consistencyMode "eventual": like counts go through Redis + background aggregator
 type Service struct {
@@ -21,7 +21,7 @@ type Service struct {
 	redis           *cache.Client
 	fanout          *FanoutWorker
 	aggregator      *LikeAggregator
-	fanoutStrategy  string // "write" or "read"
+	useRedis        bool   // true = Redis caching, false = direct PostgreSQL
 	consistencyMode string // "eventual" or "strong"
 	log             zerolog.Logger
 }
@@ -32,7 +32,7 @@ func NewService(
 	rdb *cache.Client,
 	fanout *FanoutWorker,
 	aggregator *LikeAggregator,
-	fanoutStrategy, consistencyMode string,
+	useRedis bool, consistencyMode string,
 	log zerolog.Logger,
 ) *Service {
 	return &Service{
@@ -40,7 +40,7 @@ func NewService(
 		redis:           rdb,
 		fanout:          fanout,
 		aggregator:      aggregator,
-		fanoutStrategy:  fanoutStrategy,
+		useRedis:        useRedis,
 		consistencyMode: consistencyMode,
 		log:             log,
 	}
@@ -57,8 +57,8 @@ func (s *Service) CreateTweet(ctx context.Context, userID uuid.UUID, content str
 	if err := s.repo.Create(ctx, t); err != nil {
 		return nil, fmt.Errorf("create tweet: %w", err)
 	}
-	// Trigger fan-out-on-write: push the tweet into every follower's Redis timeline
-	if s.fanoutStrategy == "write" {
+	// If Redis is enabled, trigger fan-out-on-write: push the tweet into every follower's Redis timeline
+	if s.useRedis {
 		s.fanout.Enqueue(FanoutJob{TweetID: t.ID, AuthorID: userID})
 	}
 	return t, nil

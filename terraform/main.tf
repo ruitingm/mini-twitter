@@ -58,7 +58,7 @@ module "ecs_gateway" {
   user_service_url    = "http://${module.network.alb_dns_name}/internal/user"
   tweet_service_url   = "http://${module.network.alb_dns_name}/internal/tweet"
   timeline_service_url = "http://${module.network.alb_dns_name}/internal/timeline"
-  fanout_strategy     = var.fanout_strategy
+  use_redis           = var.use_redis
   consistency_mode    = var.consistency_mode
   jwt_secret          = "supersecretjwtkey"
   target_group_arn    = module.network.gateway_target_group_arn
@@ -112,7 +112,7 @@ module "ecs_tweet" {
   db_replica_urls     = join(",", module.rds.replica_connection_strings)
   redis_addr          = module.elasticache.endpoint
   user_service_url    = "http://${module.network.alb_dns_name}/internal/user"
-  fanout_strategy     = var.fanout_strategy
+  use_redis           = var.use_redis
   consistency_mode    = var.consistency_mode
   jwt_secret          = "supersecretjwtkey"
   target_group_arn    = module.network.tweet_target_group_arn

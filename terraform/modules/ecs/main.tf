@@ -78,8 +78,8 @@ resource "aws_ecs_task_definition" "this" {
       # Experiment configuration
       [
         {
-          name  = "FANOUT_STRATEGY"
-          value = var.fanout_strategy
+          name  = "USE_REDIS"
+          value = var.use_redis
         },
         {
           name  = "CONSISTENCY_MODE"

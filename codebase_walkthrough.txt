@@ -60,10 +60,10 @@ The codebase implements a microservices-based Twitter clone with four containeri
 
 ## Experiment-Ready Features
 
-### 1. Fan-out Strategy Configuration
-- **Environment variable**: FANOUT_STRATEGY in docker-compose.yml:129
-- **Implementation**: internal/tweet/service.go:51-64 (write mode), internal/timeline/service.go:84-101 (read mode)
-- Easily switchable between experiments without code changes
+### 1. Redis vs PostgreSQL Configuration
+- **Environment variable**: USE_REDIS in docker-compose.yml
+- **Implementation**: internal/tweet/service.go:61-63 (Redis mode), internal/timeline/service.go:85-101 (PostgreSQL mode)
+- Easily switchable between Redis caching and direct PostgreSQL queries
 
 ### 2. Consistency Mode Configuration
 - **Environment variable**: CONSISTENCY_MODE in docker-compose.yml:130
