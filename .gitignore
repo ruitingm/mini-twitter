@@ -28,3 +28,9 @@ __pycache__/
 .env.*
 *.pem
 *.key
+
+# Python virtual environment
+.venv/
+venv/
+env/
+ENV/
