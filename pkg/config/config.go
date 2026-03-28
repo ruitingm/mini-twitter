@@ -41,7 +41,7 @@ type Config struct {
 	TimelineServiceURL string `envconfig:"TIMELINE_SERVICE_URL" default:"http://localhost:8083"`
 
 	// Rate limiting — maximum requests per minute per IP at the gateway
-	RateLimitRPM int `envconfig:"RATE_LIMIT_RPM" default:"60"`
+	RateLimitRPM int `envconfig:"RATE_LIMIT_RPM" default:"5000"`
 }
 
 // Load reads all environment variables (with the optional prefix) into a Config struct.
