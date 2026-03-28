@@ -45,15 +45,11 @@ variable "db_password" {
   default     = "twitter123"
 }
 
-# Experiment configuration - Variables for testing different strategies
-variable "fanout_strategy" {
-  description = "Fan-out strategy: write or read"
-  type        = string
-  default     = "write"
-  validation {
-    condition     = contains(["write", "read"], var.fanout_strategy)
-    error_message = "Fanout strategy must be either 'write' or 'read'."
-  }
+# Experiment configuration - Variables for testing Redis vs PostgreSQL
+variable "use_redis" {
+  description = "Use Redis for caching (true) or direct PostgreSQL (false)"
+  type        = bool
+  default     = true
 }
 
 variable "consistency_mode" {

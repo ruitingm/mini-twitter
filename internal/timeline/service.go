@@ -29,23 +29,23 @@ type Tweet struct {
 	CreatedAt time.Time  `json:"created_at"`
 }
 
-// Service implements timeline retrieval supporting two fanout strategies:
-//   - "write": tweet IDs are pushed into Redis at write time by the tweet service
-//   - "read":  tweet IDs are assembled from DB at read time, then briefly cached
+// Service implements timeline retrieval supporting Redis caching vs direct PostgreSQL:
+//   - useRedis=true:  tweet IDs are cached in Redis (fan-out-on-write)
+//   - useRedis=false: tweet IDs are fetched from PostgreSQL at read time
 type Service struct {
 	repo            *Repository
 	tweetServiceURL string
-	fanoutStrategy  string // "write" or "read"
+	useRedis        bool   // true = Redis caching, false = direct PostgreSQL
 	log             zerolog.Logger
 	httpClient      *http.Client
 }
 
 // NewService creates a Service. The httpClient has a 5-second timeout for tweet service calls.
-func NewService(repo *Repository, tweetServiceURL, fanoutStrategy string, log zerolog.Logger) *Service {
+func NewService(repo *Repository, tweetServiceURL string, useRedis bool, log zerolog.Logger) *Service {
 	return &Service{
 		repo:            repo,
 		tweetServiceURL: tweetServiceURL,
-		fanoutStrategy:  fanoutStrategy,
+		useRedis:        useRedis,
 		log:             log,
 		httpClient:      &http.Client{Timeout: 5 * time.Second},
 	}
@@ -59,7 +59,7 @@ func (s *Service) GetHomeTimeline(ctx context.Context, userID uuid.UUID, limit i
 		limit = defaultLimit
 	}
 
-	if s.fanoutStrategy == "write" {
+	if s.useRedis {
 		// fan-out-on-write: the tweet service pre-populated our Redis list
 		ids, hit, err := s.repo.GetHomeTimelineIDs(ctx, userID, limit)
 		if err != nil {
@@ -82,7 +82,7 @@ func (s *Service) GetHomeTimeline(ctx context.Context, userID uuid.UUID, limit i
 		return s.enrichTweets(ctx, ids)
 	}
 
-	// fan-out-on-read strategy: always query who the user follows, then read their tweets
+	// Direct PostgreSQL strategy: always query who the user follows, then read their tweets
 	followeeIDs, err := s.repo.GetFolloweeIDs(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get followees: %w", err)

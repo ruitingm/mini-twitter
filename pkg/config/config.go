@@ -27,7 +27,7 @@ type Config struct {
 	JWTExpiry time.Duration `envconfig:"JWT_EXPIRY" default:"24h"` // token lifetime
 
 	// Feature flags
-	FanoutStrategy  string `envconfig:"FANOUT_STRATEGY" default:"write"`    // "write" or "read"
+	UseRedis        bool   `envconfig:"USE_REDIS" default:"true"`           // true = Redis caching, false = direct PostgreSQL
 	ConsistencyMode string `envconfig:"CONSISTENCY_MODE" default:"eventual"` // "eventual" or "strong"
 
 	// Fanout worker pool — controls throughput of timeline fan-out

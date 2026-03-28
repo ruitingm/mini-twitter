@@ -507,22 +507,22 @@ for i in {1..10}; do
 done
 
 # ====================================================================
-# EXPERIMENT TESTING - FANOUT STRATEGIES & CONSISTENCY MODES
+# EXPERIMENT TESTING - REDIS VS POSTGRESQL & CONSISTENCY MODES
 # ====================================================================
 
 ## Test different configurations by restarting with environment variables:
 
-# Fan-out on write + eventual consistency (default)
-# FANOUT_STRATEGY=write CONSISTENCY_MODE=eventual docker-compose up
+# Redis caching + eventual consistency (default)
+# USE_REDIS=true CONSISTENCY_MODE=eventual docker-compose up
 
-# Fan-out on read + strong consistency  
-# FANOUT_STRATEGY=read CONSISTENCY_MODE=strong docker-compose up
+# Direct PostgreSQL + strong consistency  
+# USE_REDIS=false CONSISTENCY_MODE=strong docker-compose up
 
-# Fan-out on write + strong consistency
-# FANOUT_STRATEGY=write CONSISTENCY_MODE=strong docker-compose up  
+# Redis caching + strong consistency
+# USE_REDIS=true CONSISTENCY_MODE=strong docker-compose up  
 
-# Fan-out on read + eventual consistency
-# FANOUT_STRATEGY=read CONSISTENCY_MODE=eventual docker-compose up
+# Direct PostgreSQL + eventual consistency
+# USE_REDIS=false CONSISTENCY_MODE=eventual docker-compose up
 
 ## After each configuration change, test:
 # 1. Timeline load performance

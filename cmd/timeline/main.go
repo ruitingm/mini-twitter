@@ -47,8 +47,8 @@ func main() {
 	authMgr := auth.NewManager(cfg.JWTSecret, cfg.JWTExpiry)
 	// Repository handles all DB and Redis data access for timelines
 	repo := timeline.NewRepository(database, rdb, log)
-	// Service implements the core timeline logic (fan-out-on-write vs fan-out-on-read)
-	svc := timeline.NewService(repo, cfg.TweetServiceURL, cfg.FanoutStrategy, log)
+	// Service implements the core timeline logic (Redis caching vs direct PostgreSQL)
+	svc := timeline.NewService(repo, cfg.TweetServiceURL, cfg.UseRedis, log)
 	// Handler wires HTTP routes to service methods
 	h := timeline.NewHandler(svc, log)
 

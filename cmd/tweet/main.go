@@ -53,8 +53,8 @@ func main() {
 	aggregator := tweet.NewLikeAggregator(tweetRepo, rdb, cfg.AggregatorInterval, log)
 	// FanoutWorker pushes new tweet IDs into each follower's Redis timeline list
 	fanoutWorker := tweet.NewFanoutWorker(cfg.FanoutChanBuffer, cfg.FanoutWorkerCount, rdb, userRepo, log)
-	// Service orchestrates tweet CRUD, likes, and the fanout/consistency strategy
-	svc := tweet.NewService(tweetRepo, rdb, fanoutWorker, aggregator, cfg.FanoutStrategy, cfg.ConsistencyMode, log)
+	// Service orchestrates tweet CRUD, likes, and Redis vs PostgreSQL strategy
+	svc := tweet.NewService(tweetRepo, rdb, fanoutWorker, aggregator, cfg.UseRedis, cfg.ConsistencyMode, log)
 	h := tweet.NewHandler(svc, log)
 
 	// Start background goroutines before accepting HTTP traffic

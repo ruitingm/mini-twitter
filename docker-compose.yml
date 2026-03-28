@@ -113,7 +113,7 @@ services:
       POSTGRES_REPLICA_URLS: postgres://twitter:twitter@postgres-replica1:5432/twitter,postgres://twitter:twitter@postgres-replica2:5432/twitter
       REDIS_ADDR: redis:6379
       JWT_SECRET: supersecretjwtkey
-      FANOUT_STRATEGY: ${FANOUT_STRATEGY:-write}
+      USE_REDIS: ${USE_REDIS:-true}
       CONSISTENCY_MODE: ${CONSISTENCY_MODE:-eventual}
       USER_SERVICE_URL: http://user-service:8081
     ports:
@@ -137,7 +137,7 @@ services:
       POSTGRES_REPLICA_URLS: postgres://twitter:twitter@postgres-replica1:5432/twitter,postgres://twitter:twitter@postgres-replica2:5432/twitter
       REDIS_ADDR: redis:6379
       JWT_SECRET: supersecretjwtkey
-      FANOUT_STRATEGY: ${FANOUT_STRATEGY:-write}
+      USE_REDIS: ${USE_REDIS:-true}
       TWEET_SERVICE_URL: http://tweet-service:8082
     ports:
       - "8083:8083"

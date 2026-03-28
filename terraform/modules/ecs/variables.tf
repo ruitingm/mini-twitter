@@ -131,10 +131,10 @@ variable "timeline_service_url" {
 }
 
 # Experiment configuration variables
-variable "fanout_strategy" {
-  type        = string
-  default     = "write"
-  description = "Fan-out strategy: write or read"
+variable "use_redis" {
+  type        = bool
+  default     = true
+  description = "Use Redis for caching (true) or direct PostgreSQL (false)"
 }
 
 variable "consistency_mode" {
