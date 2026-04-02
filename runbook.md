@@ -45,6 +45,7 @@ alb_dns_name = "mini-twitter-alb-xxxxx.us-west-2.elb.amazonaws.com"
 cd ~/Desktop/mini-twitter/pkg/db/migrations
 export PGPASSWORD='twitter123'
 
+export RDSHOST="<your-rds-endpoint>"
 psql "host=$RDSHOST port=5432 dbname=twitter user=twitter sslmode=require"
 ```
 

@@ -79,7 +79,7 @@ resource "aws_ecs_task_definition" "this" {
       [
         {
           name  = "USE_REDIS"
-          value = var.use_redis
+          value = tostring(var.use_redis)
         },
         {
           name  = "CONSISTENCY_MODE"
