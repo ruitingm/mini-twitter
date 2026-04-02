@@ -92,6 +92,10 @@ resource "aws_ecs_task_definition" "this" {
         {
           name  = "JWT_EXPIRY"
           value = "24h"
+        },
+        {
+          name  = "RATE_LIMIT_RPM"
+          value = tostring(var.rate_limit_rpm)
         }
       ]
     )

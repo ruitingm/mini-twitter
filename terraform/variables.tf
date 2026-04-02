@@ -52,6 +52,12 @@ variable "use_redis" {
   default     = true
 }
 
+variable "rate_limit_rpm" {
+  description = "Rate limit requests per minute"
+  type        = number
+  default     = 50000
+}
+
 variable "consistency_mode" {
   description = "Consistency mode: eventual or strong"
   type        = string

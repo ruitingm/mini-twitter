@@ -61,6 +61,7 @@ module "ecs_gateway" {
   use_redis           = var.use_redis
   consistency_mode    = var.consistency_mode
   jwt_secret          = "supersecretjwtkey"
+  rate_limit_rpm      = var.rate_limit_rpm
   target_group_arn    = module.network.gateway_target_group_arn
 }
 
@@ -86,6 +87,7 @@ module "ecs_user" {
   db_password      = var.db_password
   db_replica_urls  = join(",", module.rds.replica_connection_strings)
   jwt_secret       = "supersecretjwtkey"
+  rate_limit_rpm   = var.rate_limit_rpm
   target_group_arn = module.network.user_target_group_arn
 }
 
@@ -115,6 +117,7 @@ module "ecs_tweet" {
   use_redis           = var.use_redis
   consistency_mode    = var.consistency_mode
   jwt_secret          = "supersecretjwtkey"
+  rate_limit_rpm      = var.rate_limit_rpm
   target_group_arn    = module.network.tweet_target_group_arn
 }
 
@@ -142,6 +145,7 @@ module "ecs_timeline" {
   redis_addr       = module.elasticache.endpoint
   tweet_service_url = "http://${module.network.alb_dns_name}/internal/tweet"
   jwt_secret       = "supersecretjwtkey"
+  rate_limit_rpm   = var.rate_limit_rpm
   target_group_arn = module.network.timeline_target_group_arn
 }
 

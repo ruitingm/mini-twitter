@@ -149,6 +149,12 @@ variable "jwt_secret" {
   description = "JWT signing secret"
 }
 
+variable "rate_limit_rpm" {
+  type        = number
+  default     = 50000
+  description = "Rate limit requests per minute"
+}
+
 # Load balancer target group ARN for service registration
 variable "target_group_arn" {
   type        = string

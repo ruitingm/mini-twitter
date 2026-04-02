@@ -15,17 +15,21 @@ set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
 
-# Start smaller for AWS baseline seeding
-USER_COUNT="${USER_COUNT:-20}"
-FOLLOWS_PER_USER="${FOLLOWS_PER_USER:-5}"
-TWEETS_PER_USER="${TWEETS_PER_USER:-5}"
+# Optimized dataset for multiple experiments
+USER_COUNT="${USER_COUNT:-300}"
+FOLLOWS_PER_USER="${FOLLOWS_PER_USER:-15}"
+TWEETS_PER_USER="${TWEETS_PER_USER:-50}"
+CELEBRITY_FOLLOWERS="${CELEBRITY_FOLLOWERS:-150}"  # Celebrity gets extra followers
 PASSWORD="${PASSWORD:-password123}"
 
-# Throttling controls (seconds)
-REGISTER_SLEEP="${REGISTER_SLEEP:-1}"
-LOGIN_SLEEP="${LOGIN_SLEEP:-1}"
-FOLLOW_SLEEP="${FOLLOW_SLEEP:-1}"
-TWEET_SLEEP="${TWEET_SLEEP:-1}"
+# No delays with high rate limit (50000 RPM)
+REGISTER_SLEEP="${REGISTER_SLEEP:-0}"
+LOGIN_SLEEP="${LOGIN_SLEEP:-0}"
+FOLLOW_SLEEP="${FOLLOW_SLEEP:-0}"
+TWEET_SLEEP="${TWEET_SLEEP:-0}"
+
+# Parallelism settings
+MAX_PARALLEL="${MAX_PARALLEL:-10}"  # Number of concurrent processes
 
 OUT_DIR="testing"
 OUT_FILE="$OUT_DIR/test_users.json"
@@ -76,12 +80,11 @@ request_json() {
   curl "${args[@]}"
 }
 
-# ------------------------------------------------------------
-# Step 1: Create users and log them in
-# ------------------------------------------------------------
-echo "== Step 1: Creating users =="
-
-for i in $(seq 1 "$USER_COUNT"); do
+# Helper function to create a single user
+create_user() {
+  local i=$1
+  local user_data_file=$2
+  
   USERNAME="loaduser_${RUN_ID}_$i"
   EMAIL="${USERNAME}@example.com"
 
@@ -127,6 +130,8 @@ for i in $(seq 1 "$USER_COUNT"); do
     exit 1
   fi
 
+  # Write to individual temp file to avoid file locking issues
+  local temp_file="${user_data_file}.${i}"
   jq -n \
     --arg username "$USERNAME" \
     --arg email "$EMAIL" \
@@ -139,28 +144,55 @@ for i in $(seq 1 "$USER_COUNT"); do
       password: $password,
       token: $token,
       user_id: $user_id
-    }' >> "$USER_DATA_FILE"
+    }' > "$temp_file"
 
   echo "Created $USERNAME with user_id=$USER_ID"
-
   sleep "$LOGIN_SLEEP"
+}
+
+# ------------------------------------------------------------
+# Step 1: Create users and log them in (parallel)
+# ------------------------------------------------------------
+echo "== Step 1: Creating users (parallel) =="
+
+# Create users in parallel batches
+for batch_start in $(seq 1 "$MAX_PARALLEL" "$USER_COUNT"); do
+  batch_end=$((batch_start + MAX_PARALLEL - 1))
+  if [ "$batch_end" -gt "$USER_COUNT" ]; then
+    batch_end="$USER_COUNT"
+  fi
+  
+  echo "Creating users batch: $batch_start to $batch_end"
+  
+  # Start parallel processes for this batch
+  for i in $(seq "$batch_start" "$batch_end"); do
+    create_user "$i" "$USER_DATA_FILE" &
+  done
+  
+  # Wait for this batch to complete
+  wait
+  echo "Batch $batch_start-$batch_end completed"
 done
 
-# Convert newline-delimited JSON to JSON array
-jq -s '.' "$USER_DATA_FILE" > "$OUT_FILE"
+# Merge all individual user files into final JSON array
+echo "Merging user data files..."
+for i in $(seq 1 "$USER_COUNT"); do
+  cat "${USER_DATA_FILE}.${i}"
+done | jq -s '.' > "$OUT_FILE"
+
+# Clean up temp files
+for i in $(seq 1 "$USER_COUNT"); do
+  rm -f "${USER_DATA_FILE}.${i}"
+done
 
 echo
 echo "Saved user credentials to $OUT_FILE"
 echo
 
-# ------------------------------------------------------------
-# Step 2: Build follow graph
-# Circular pattern:
-# user_i follows next K users
-# ------------------------------------------------------------
-echo "== Step 2: Building follow graph =="
-
-for i in $(seq 0 $((USER_COUNT - 1))); do
+# Helper function to create follows for a single user
+create_follows_for_user() {
+  local i=$1
+  
   FOLLOWER_TOKEN=$(jq -r ".[$i].token" "$OUT_FILE")
 
   for step in $(seq 1 "$FOLLOWS_PER_USER"); do
@@ -178,17 +210,77 @@ for i in $(seq 0 $((USER_COUNT - 1))); do
 
     sleep "$FOLLOW_SLEEP"
   done
+}
+
+# ------------------------------------------------------------
+# Step 2: Build follow graph (parallel)
+# Circular pattern: user_i follows next K users
+# ------------------------------------------------------------
+echo "== Step 2: Building follow graph (parallel) =="
+
+# Create follows in parallel batches
+for batch_start in $(seq 0 $((MAX_PARALLEL - 1)) $((USER_COUNT - 1))); do
+  batch_end=$((batch_start + MAX_PARALLEL - 1))
+  if [ "$batch_end" -ge "$USER_COUNT" ]; then
+    batch_end=$((USER_COUNT - 1))
+  fi
+  
+  echo "Creating follows batch: $batch_start to $batch_end"
+  
+  # Start parallel processes for this batch
+  for i in $(seq "$batch_start" "$batch_end"); do
+    create_follows_for_user "$i" &
+  done
+  
+  # Wait for this batch to complete
+  wait
+  echo "Follow batch $batch_start-$batch_end completed"
 done
 
 echo "Follow graph created."
 echo
 
 # ------------------------------------------------------------
-# Step 3: Create initial tweets for each user
+# Step 2.5: Create celebrity user with many followers (for consistency experiment)
 # ------------------------------------------------------------
-echo "== Step 3: Creating initial tweets =="
+echo "== Step 2.5: Setting up celebrity user =="
 
-for i in $(seq 0 $((USER_COUNT - 1))); do
+# Use the first user as the celebrity
+CELEBRITY_ID=$(jq -r ".[0].user_id" "$OUT_FILE")
+CELEBRITY_USERNAME=$(jq -r ".[0].username" "$OUT_FILE")
+
+echo "Celebrity user: $CELEBRITY_USERNAME ($CELEBRITY_ID)"
+echo "Adding $CELEBRITY_FOLLOWERS additional followers..."
+
+# Add extra followers to the celebrity (beyond the regular follow graph)
+for i in $(seq 1 "$CELEBRITY_FOLLOWERS"); do
+  FOLLOWER_INDEX=$(( i % USER_COUNT ))
+  
+  # Skip if this user already follows celebrity from regular graph
+  if [ $FOLLOWER_INDEX -eq 0 ]; then
+    continue
+  fi
+  
+  FOLLOWER_TOKEN=$(jq -r ".[$FOLLOWER_INDEX].token" "$OUT_FILE")
+  
+  FOLLOW_RES=$(request_json POST "/v1/users/$CELEBRITY_ID/follow" "" "$FOLLOWER_TOKEN")
+  FOLLOW_ERROR=$(echo "$FOLLOW_RES" | jq -r '.error // empty' 2>/dev/null || true)
+  
+  if [[ -n "$FOLLOW_ERROR" ]] && [[ "$FOLLOW_ERROR" != "already following" ]]; then
+    echo "Celebrity follow failed: user $FOLLOWER_INDEX -> celebrity"
+    echo "$FOLLOW_RES" | jq .
+  fi
+  
+  sleep "$FOLLOW_SLEEP"
+done
+
+echo "Celebrity setup complete: $CELEBRITY_USERNAME now has ~$CELEBRITY_FOLLOWERS followers"
+echo
+
+# Helper function to create tweets for a single user
+create_tweets_for_user() {
+  local i=$1
+  
   TOKEN=$(jq -r ".[$i].token" "$OUT_FILE")
   USERNAME=$(jq -r ".[$i].username" "$OUT_FILE")
 
@@ -217,6 +309,30 @@ for i in $(seq 0 $((USER_COUNT - 1))); do
   done
 
   echo "Created $TWEETS_PER_USER tweets for $USERNAME"
+}
+
+# ------------------------------------------------------------
+# Step 3: Create initial tweets for each user (parallel)
+# ------------------------------------------------------------
+echo "== Step 3: Creating initial tweets (parallel) =="
+
+# Create tweets in parallel batches
+for batch_start in $(seq 0 $((MAX_PARALLEL - 1)) $((USER_COUNT - 1))); do
+  batch_end=$((batch_start + MAX_PARALLEL - 1))
+  if [ "$batch_end" -ge "$USER_COUNT" ]; then
+    batch_end=$((USER_COUNT - 1))
+  fi
+  
+  echo "Creating tweets batch: $batch_start to $batch_end"
+  
+  # Start parallel processes for this batch
+  for i in $(seq "$batch_start" "$batch_end"); do
+    create_tweets_for_user "$i" &
+  done
+  
+  # Wait for this batch to complete
+  wait
+  echo "Tweet batch $batch_start-$batch_end completed"
 done
 
 echo

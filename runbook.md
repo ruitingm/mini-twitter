@@ -112,21 +112,37 @@ Expected result:
 
 ## 5. Seed Test Data
 
+Choose one option based on your testing needs:
+
+### Option A: Small Dataset (Basic Testing)
+
 ```bash
 ./scripts/seed_test_data.sh
 ```
 
-This will:
+**Dataset size:**
+* ~20 users
+* ~100 tweets  
+* ~100 follows
+* **Time:** ~2 minutes
 
-* Create ~20 users
-* Build follow graph
-* Insert tweets
+**Use for:** Basic functionality testing, quick verification
 
-Output file:
+### Option B: Large Dataset (Performance Experiments)
 
 ```bash
-testing/test_users.json
+./scripts/seed_test_data_large.sh
 ```
+
+**Dataset size:**
+* 300 users (with 1 celebrity user having ~150 followers)
+* 15,000 tweets
+* 4,500+ follows
+* **Time:** ~5-8 minutes (parallelized)
+
+**Use for:** stress testing, consistency testing, experiments
+
+**Output file:** `testing/test_users.json`
 
 ---
 
@@ -147,11 +163,17 @@ SELECT COUNT(*) FROM follows;
 \q
 ```
 
-Expected (approx):
+**Expected counts:**
 
+### Small dataset:
 * users ≈ 20+
 * tweets ≈ 100+
 * follows ≈ 100+
+
+### Large dataset:
+* users ≈ 300+
+* tweets ≈ 15,000+
+* follows ≈ 4,500+
 
 ---
 
