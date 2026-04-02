@@ -141,7 +141,6 @@ module "ecs_timeline" {
   db_replica_urls  = join(",", module.rds.replica_connection_strings)
   redis_addr       = module.elasticache.endpoint
   tweet_service_url = "http://${module.network.alb_dns_name}/internal/tweet"
-  fanout_strategy  = var.fanout_strategy
   jwt_secret       = "supersecretjwtkey"
   target_group_arn = module.network.timeline_target_group_arn
 }
