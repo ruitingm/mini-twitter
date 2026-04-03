@@ -33,7 +33,8 @@ class MiniTwitterUser(HttpUser):
     - Uses pre-seeded users/tokens
     """
 
-    wait_time = between(1, 3)
+    # wait_time = between(1, 3)
+    wait_time = between(1, 2)
 
     def on_start(self):
         # Each virtual user randomly chooses one seeded account
