@@ -1,8 +1,7 @@
 # Codebase Walkthrough: Mini-Twitter Distributed Social Media Backend
 
 ## Architecture Overview
-
-The codebase implements a microservices-based Twitter clone with four containerized Go services as specified in your proposal:
+The codebase implements a microservices-based Twitter clone with 4 containerized Go services as specified in the proposal:
 
 ### 1. **API Gateway** (cmd/gateway/main.go:22-83, internal/gateway/)
 - **Purpose**: Routes requests, enforces rate limiting, aggregates responses
@@ -39,8 +38,8 @@ The codebase implements a microservices-based Twitter clone with four containeri
   - Tweet enrichment via batch API calls to tweet service
 - **Cache Strategy**: 1000-tweet cache per user, 24-hour TTL
 
-## Data Layer Implementation
 
+## Data Layer Implementation
 ### PostgreSQL Schema
 - **users table** (pkg/db/migrations/001_users.sql:1-13): Core user data with follower/following counts
 - **tweets table** (pkg/db/migrations/002_tweets.sql:1-10): Tweet content with like_count column
@@ -53,20 +52,20 @@ The codebase implements a microservices-based Twitter clone with four containeri
 - **Like counters**: like_count:{tweet_id} - Real-time counts
 - **Rate limiting**: Per-IP counters for gateway throttling
 
-### Database Replication (docker-compose.yml:4-66)
+### Database Replication
 - Primary PostgreSQL instance with WAL streaming
 - Two read replicas (postgres-replica1, postgres-replica2)
 - Automatic failover handling in pkg/db/postgres.go
 
-## Experiment-Ready Features
 
+## Experiment-Ready Features
 ### 1. Redis vs PostgreSQL Configuration
-- **Environment variable**: USE_REDIS in docker-compose.yml
+- **Environment variable**: USE_REDIS
 - **Implementation**: internal/tweet/service.go:61-63 (Redis mode), internal/timeline/service.go:85-101 (PostgreSQL mode)
 - Easily switchable between Redis caching and direct PostgreSQL queries
 
 ### 2. Consistency Mode Configuration
-- **Environment variable**: CONSISTENCY_MODE in docker-compose.yml:130
+- **Environment variable**: CONSISTENCY_MODE
 - **Strong consistency path**: internal/tweet/service.go:80-83
 - **Eventual consistency path**: internal/tweet/service.go:84-95
 - Like aggregator runs on configurable interval
@@ -76,19 +75,15 @@ The codebase implements a microservices-based Twitter clone with four containeri
 - **Redis fallback**: Timeline service falls back to PostgreSQL (internal/timeline/service.go:66-81)
 - **Circuit breaker pattern**: Rate limiter sheds load under pressure
 
-## Monitoring & Observability
 
+## Monitoring & Observability
 ### Structured Logging (pkg/logger/logger.go)
 - Zerolog with service tagging
 - Request ID tracking via middleware
 - Error context preservation
 
-### Docker Compose Services (docker-compose.yml:79-93)
-- Jaeger for distributed tracing (OTLP enabled)
-- Health checks on all services
 
-## Missing Components from Proposal
-
+## Other Components from Proposal
 ### 1. **Terraform Infrastructure** ✅ **IMPLEMENTED**
 - ✅ AWS ECS task definitions for 4 microservices
 - ✅ Application Load Balancer with path-based routing
@@ -98,18 +93,18 @@ The codebase implements a microservices-based Twitter clone with four containeri
 - ✅ ECR repositories for Docker images
 - ✅ Configurable experiment variables (fanout_strategy, consistency_mode)
 
-### 2. **Load Testing Scripts** ❌
-- No Locust load testing scripts
-- Would need for performance experiments
-- Should include user registration, tweet creation, timeline fetching patterns
+### 2. **Load Testing Scripts**
+- ✅ Seed datasets (small vs. large)
+- ✅ Would need for performance experiments
+- ✅ Should include user registration, tweet creation, timeline fetching patterns
 
 ### 3. **Experiment Automation** ⚠️ **PARTIAL**
 - ✅ Environment variables for fanout strategy (write/read)
 - ✅ Environment variables for consistency mode (eventual/strong)
 - ✅ Configurable via Terraform variables
-- ❌ No automated A/B testing framework
-- ❌ No automated metrics collection and comparison
-- ❌ No automated experiment result analysis
+- No automated A/B testing framework
+- No automated metrics collection and comparison
+- No automated experiment result analysis
 
 ### 4. **Optional Improvements**
 - **Jaeger Distributed Tracing**: For detailed request flow analysis across microservices
@@ -118,7 +113,6 @@ The codebase implements a microservices-based Twitter clone with four containeri
 
 
 ## Key Implementation Highlights
-
 ### Fan-out-on-Write Implementation (internal/tweet/fanout.go:95-130)
 - Paginated follower fetching (500 at a time)
 - Redis pipeline for batch updates
@@ -133,14 +127,6 @@ The codebase implements a microservices-based Twitter clone with four containeri
 - Per-IP tracking in Redis
 - Configurable requests per minute
 - HTTP 429 responses when exceeded
-
-## Development & Testing
-
-### Local Development (Makefile:1-45)
-make up      # Start all services via Docker Compose
-make build   # Build all service binaries
-make test    # Run test suite
-make migrate # Apply database migrations
 
 ### Service Endpoints
 - Gateway: http://localhost:8080

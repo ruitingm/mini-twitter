@@ -60,9 +60,8 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-// JWTPassthrough validates the JWT and forwards the request.
-// It does NOT block invalid tokens — that is done per-route on internal services.
-// This middleware simply extracts user info and forwards X-User-ID header.
+// JWTPassthrough currently performs no authentication work and just forwards requests.
+// Internal services remain responsible for validating JWTs on protected routes.
 func JWTPassthrough(mgr *auth.Manager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
