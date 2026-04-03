@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	defaultLimit     = 50             // used when the caller passes an out-of-range limit
-	readModeCacheTTL = 60 * time.Second // how long to cache timelines in fan-out-on-read mode
+	defaultLimit = 50 // used when the caller passes an out-of-range limit
+	// readModeCacheTTL = 60 * time.Second // disabled with Redis read-cache in no-Redis mode
 )
 
 // Tweet is a minimal copy of the tweet model for timeline responses.
@@ -87,17 +87,18 @@ func (s *Service) GetHomeTimeline(ctx context.Context, userID uuid.UUID, limit i
 	if err != nil {
 		return nil, fmt.Errorf("get followees: %w", err)
 	}
-	// Still check Redis for a short-lived cache to reduce repeat DB hits
-	cachedIDs, hit, _ := s.repo.GetHomeTimelineIDs(ctx, userID, limit)
-	if hit && len(cachedIDs) > 0 {
-		return s.enrichTweets(ctx, cachedIDs)
-	}
+	// Redis read-cache is intentionally disabled in no-Redis mode so this branch
+	// measures direct PostgreSQL timeline reads without cache assistance.
+	// cachedIDs, hit, _ := s.repo.GetHomeTimelineIDs(ctx, userID, limit)
+	// if hit && len(cachedIDs) > 0 {
+	// 	return s.enrichTweets(ctx, cachedIDs)
+	// }
 	ids, err := s.repo.GetHomeTimelineFromDB(ctx, followeeIDs, limit, before)
 	if err != nil {
 		return nil, fmt.Errorf("db timeline: %w", err)
 	}
-	// Store the result in Redis briefly in a background goroutine (non-blocking)
-	go s.repo.CacheHomeTimeline(context.Background(), userID, ids, readModeCacheTTL)
+	// Redis write-back cache is also disabled in no-Redis mode.
+	// go s.repo.CacheHomeTimeline(context.Background(), userID, ids, readModeCacheTTL)
 	return s.enrichTweets(ctx, ids)
 }
 
