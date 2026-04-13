@@ -1,4 +1,4 @@
-# Mini Twitter Deployment & Test Runbook
+# Deployment & Test Runbook
 
 ## Overview
 
