@@ -33,9 +33,23 @@ module "logging" {
   retention_in_days = var.log_retention_days
 }
 
-# Reuse an existing IAM role for ECS tasks
-data "aws_iam_role" "lab_role" {
-  name = "LabRole"
+# IAM role for ECS tasks (execution + task role)
+resource "aws_iam_role" "ecs_role" {
+  name = "${var.service_name}-ecs-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
+  role       = aws_iam_role.ecs_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # ECS services - Create 4 separate microservices
@@ -46,8 +60,8 @@ module "ecs_gateway" {
   container_port     = 8080
   subnet_ids         = module.network.public_subnet_ids
   security_group_ids = [module.network.security_group_id]
-  execution_role_arn = data.aws_iam_role.lab_role.arn
-  task_role_arn      = data.aws_iam_role.lab_role.arn
+  execution_role_arn = aws_iam_role.ecs_role.arn
+  task_role_arn      = aws_iam_role.ecs_role.arn
   log_group_name     = module.logging.log_group_name
   ecs_count          = var.ecs_count
   region             = var.aws_region
@@ -72,8 +86,8 @@ module "ecs_user" {
   container_port     = 8081
   subnet_ids         = module.network.public_subnet_ids
   security_group_ids = [module.network.security_group_id]
-  execution_role_arn = data.aws_iam_role.lab_role.arn
-  task_role_arn      = data.aws_iam_role.lab_role.arn
+  execution_role_arn = aws_iam_role.ecs_role.arn
+  task_role_arn      = aws_iam_role.ecs_role.arn
   log_group_name     = module.logging.log_group_name
   ecs_count          = var.ecs_count
   region             = var.aws_region
@@ -100,8 +114,8 @@ module "ecs_tweet" {
   container_port     = 8082
   subnet_ids         = module.network.public_subnet_ids
   security_group_ids = [module.network.security_group_id]
-  execution_role_arn = data.aws_iam_role.lab_role.arn
-  task_role_arn      = data.aws_iam_role.lab_role.arn
+  execution_role_arn = aws_iam_role.ecs_role.arn
+  task_role_arn      = aws_iam_role.ecs_role.arn
   log_group_name     = module.logging.log_group_name
   ecs_count          = var.ecs_count
   region             = var.aws_region
@@ -130,8 +144,8 @@ module "ecs_timeline" {
   container_port     = 8083
   subnet_ids         = module.network.public_subnet_ids
   security_group_ids = [module.network.security_group_id]
-  execution_role_arn = data.aws_iam_role.lab_role.arn
-  task_role_arn      = data.aws_iam_role.lab_role.arn
+  execution_role_arn = aws_iam_role.ecs_role.arn
+  task_role_arn      = aws_iam_role.ecs_role.arn
   log_group_name     = module.logging.log_group_name
   ecs_count          = var.ecs_count
   region             = var.aws_region

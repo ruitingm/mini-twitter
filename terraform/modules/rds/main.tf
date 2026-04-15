@@ -12,12 +12,20 @@ resource "aws_security_group" "rds_sg" {
   name   = "${var.service_name}-rds-sg"
   vpc_id = var.vpc_id
 
-  # Allow PostgreSQL from ECS only
+  # Allow PostgreSQL from ECS
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [var.ecs_security_group_id]
+  }
+
+  # Allow PostgreSQL from anywhere (for migrations and seeding)
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -50,8 +58,7 @@ resource "aws_db_instance" "this" {
 
   skip_final_snapshot     = true
   deletion_protection     = false
-  backup_retention_period = 7  # Required for read replicas
-  backup_window          = "03:00-04:00"
+  backup_retention_period = 0
   maintenance_window     = "sun:04:00-sun:05:00"
 
   multi_az = false
@@ -61,32 +68,3 @@ resource "aws_db_instance" "this" {
   }
 }
 
-# Read replica 1 - For distributing read load
-resource "aws_db_instance" "replica1" {
-  identifier                = "${var.service_name}-postgres-replica1"
-  replicate_source_db       = aws_db_instance.this.identifier
-  instance_class            = "db.t3.micro"
-  publicly_accessible       = true
-  skip_final_snapshot       = true
-  deletion_protection       = false
-  auto_minor_version_upgrade = false
-
-  tags = {
-    Name = "${var.service_name}-postgres-replica1"
-  }
-}
-
-# Read replica 2 - For failure resilience experiments
-resource "aws_db_instance" "replica2" {
-  identifier                = "${var.service_name}-postgres-replica2"
-  replicate_source_db       = aws_db_instance.this.identifier
-  instance_class            = "db.t3.micro"
-  publicly_accessible       = true
-  skip_final_snapshot       = true
-  deletion_protection       = false
-  auto_minor_version_upgrade = false
-
-  tags = {
-    Name = "${var.service_name}-postgres-replica2"
-  }
-}
