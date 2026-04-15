@@ -12,12 +12,20 @@ resource "aws_security_group" "rds_sg" {
   name   = "${var.service_name}-rds-sg"
   vpc_id = var.vpc_id
 
-  # Allow PostgreSQL from ECS only
+  # Allow PostgreSQL from ECS
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [var.ecs_security_group_id]
+  }
+
+  # Allow PostgreSQL from anywhere (for migrations and seeding)
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
