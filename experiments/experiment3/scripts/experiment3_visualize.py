@@ -9,8 +9,8 @@ Generates:
   - Per-scenario: response time over time, throughput over time, error rate
   - Combined comparison chart across all scenarios
 
-Usage:
-    python3 scripts/experiment3_visualize.py results/experiment3_full/<run_id>
+Usage (run from project root):
+    python3 experiments/experiment3/scripts/experiment3_visualize.py experiments/experiment3/results/<run_id>
 """
 
 import csv

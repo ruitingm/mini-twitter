@@ -15,10 +15,10 @@
 #   - Test data seeded (./scripts/seed_test_data_large.sh)
 #   - Infrastructure deployed (terraform apply)
 #
-# Usage:
+# Usage (run from project root):
 #   export BASE_URL="http://<alb-dns>"
 #   export REDIS_HOST="<elasticache-endpoint>"
-#   ./scripts/experiment3_resilience.sh
+#   ./experiments/experiment3/scripts/experiment3_resilience.sh
 # ============================================================================
 
 set -euo pipefail

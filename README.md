@@ -11,6 +11,6 @@ We built this system to systematically evaluate key distributed systems tradeoff
 
 
 ### Documentation
-Check out [codebase_walkthrough](codebase_walkthrough.md) for architecture overview and implementation details.
+Check out [codebase_walkthrough](docs/codebase_walkthrough.md) for architecture overview and implementation details.
 
-Check out the [runbook](runbook.md) for deployment and testing instructions.
+Check out the [runbook](docs/runbook.md) for deployment and testing instructions.
