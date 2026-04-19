@@ -6,8 +6,8 @@ Reads Locust CSV outputs from each scenario, splits time-series data into
 pre-failure / during-failure / post-recovery windows using the experiment log,
 and generates a comparison report.
 
-Usage:
-    python3 scripts/experiment3_analyze.py results/experiment3_full/<run_id>
+Usage (run from project root):
+    python3 experiments/experiment3/scripts/experiment3_analyze.py experiments/experiment3/results/<run_id>
 """
 
 import csv
