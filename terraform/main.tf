@@ -19,7 +19,7 @@ module "ecr_user" {
 
 module "ecr_tweet" {
   source          = "./modules/ecr"
-  repository_name = "${var.ecr_repository_name}-tweet"  
+  repository_name = "${var.ecr_repository_name}-tweet"
 }
 
 module "ecr_timeline" {
@@ -53,16 +53,22 @@ module "ecs_gateway" {
   region             = var.aws_region
 
   # Gateway-specific environment variables
-  service_type        = "gateway"
-  redis_addr          = module.elasticache.endpoint
-  user_service_url    = "http://${module.network.alb_dns_name}/internal/user"
-  tweet_service_url   = "http://${module.network.alb_dns_name}/internal/tweet"
+  service_type         = "gateway"
+  redis_addr           = module.elasticache.endpoint
+  user_service_url     = "http://${module.network.alb_dns_name}/internal/user"
+  tweet_service_url    = "http://${module.network.alb_dns_name}/internal/tweet"
   timeline_service_url = "http://${module.network.alb_dns_name}/internal/timeline"
-  use_redis           = var.use_redis
-  consistency_mode    = var.consistency_mode
-  jwt_secret          = "supersecretjwtkey"
-  rate_limit_rpm      = var.rate_limit_rpm
-  target_group_arn    = module.network.gateway_target_group_arn
+  use_redis            = var.use_redis
+  consistency_mode     = var.consistency_mode
+  jwt_secret           = "supersecretjwtkey"
+  rate_limit_rpm       = var.rate_limit_rpm
+  target_group_arn     = module.network.gateway_target_group_arn
+
+  # Auto-scaling
+  enable_autoscaling       = var.enable_autoscaling
+  autoscaling_min_capacity = var.autoscaling_min_capacity
+  autoscaling_max_capacity = var.autoscaling_max_capacity
+  autoscaling_cpu_target   = var.autoscaling_cpu_target
 }
 
 module "ecs_user" {
@@ -91,6 +97,12 @@ module "ecs_user" {
   jwt_secret       = "supersecretjwtkey"
   rate_limit_rpm   = var.rate_limit_rpm
   target_group_arn = module.network.user_target_group_arn
+
+  # Auto-scaling
+  enable_autoscaling       = var.enable_autoscaling
+  autoscaling_min_capacity = var.autoscaling_min_capacity
+  autoscaling_max_capacity = var.autoscaling_max_capacity
+  autoscaling_cpu_target   = var.autoscaling_cpu_target
 }
 
 module "ecs_tweet" {
@@ -107,20 +119,26 @@ module "ecs_tweet" {
   region             = var.aws_region
 
   # Tweet service environment variables
-  service_type        = "tweet"
-  db_host             = module.rds.endpoint
-  db_port             = tostring(module.rds.port)
-  db_name             = module.rds.db_name
-  db_username         = var.db_username
-  db_password         = var.db_password
-  db_replica_urls     = join(",", module.rds.replica_connection_strings)
-  redis_addr          = module.elasticache.endpoint
-  user_service_url    = "http://${module.network.alb_dns_name}/internal/user"
-  use_redis           = var.use_redis
-  consistency_mode    = var.consistency_mode
-  jwt_secret          = "supersecretjwtkey"
-  rate_limit_rpm      = var.rate_limit_rpm
-  target_group_arn    = module.network.tweet_target_group_arn
+  service_type     = "tweet"
+  db_host          = module.rds.endpoint
+  db_port          = tostring(module.rds.port)
+  db_name          = module.rds.db_name
+  db_username      = var.db_username
+  db_password      = var.db_password
+  db_replica_urls  = join(",", module.rds.replica_connection_strings)
+  redis_addr       = module.elasticache.endpoint
+  user_service_url = "http://${module.network.alb_dns_name}/internal/user"
+  use_redis        = var.use_redis
+  consistency_mode = var.consistency_mode
+  jwt_secret       = "supersecretjwtkey"
+  rate_limit_rpm   = var.rate_limit_rpm
+  target_group_arn = module.network.tweet_target_group_arn
+
+  # Auto-scaling
+  enable_autoscaling       = var.enable_autoscaling
+  autoscaling_min_capacity = var.autoscaling_min_capacity
+  autoscaling_max_capacity = var.autoscaling_max_capacity
+  autoscaling_cpu_target   = var.autoscaling_cpu_target
 }
 
 module "ecs_timeline" {
@@ -137,19 +155,25 @@ module "ecs_timeline" {
   region             = var.aws_region
 
   # Timeline service environment variables
-  service_type     = "timeline"
-  db_host          = module.rds.endpoint
-  db_port          = tostring(module.rds.port)
-  db_name          = module.rds.db_name
-  db_username      = var.db_username
-  db_password      = var.db_password
-  db_replica_urls  = join(",", module.rds.replica_connection_strings)
-  redis_addr       = module.elasticache.endpoint
-  use_redis        = var.use_redis
+  service_type      = "timeline"
+  db_host           = module.rds.endpoint
+  db_port           = tostring(module.rds.port)
+  db_name           = module.rds.db_name
+  db_username       = var.db_username
+  db_password       = var.db_password
+  db_replica_urls   = join(",", module.rds.replica_connection_strings)
+  redis_addr        = module.elasticache.endpoint
+  use_redis         = var.use_redis
   tweet_service_url = "http://${module.network.alb_dns_name}/internal/tweet"
-  jwt_secret       = "supersecretjwtkey"
-  rate_limit_rpm   = var.rate_limit_rpm
-  target_group_arn = module.network.timeline_target_group_arn
+  jwt_secret        = "supersecretjwtkey"
+  rate_limit_rpm    = var.rate_limit_rpm
+  target_group_arn  = module.network.timeline_target_group_arn
+
+  # Auto-scaling
+  enable_autoscaling       = var.enable_autoscaling
+  autoscaling_min_capacity = var.autoscaling_min_capacity
+  autoscaling_max_capacity = var.autoscaling_max_capacity
+  autoscaling_cpu_target   = var.autoscaling_cpu_target
 }
 
 
@@ -157,7 +181,7 @@ module "ecs_timeline" {
 resource "docker_image" "gateway" {
   name = "${module.ecr_gateway.repository_url}:latest"
   build {
-    context = ".."
+    context    = ".."
     dockerfile = "Dockerfile"
     build_args = {
       SERVICE : "gateway"
@@ -171,7 +195,7 @@ resource "docker_image" "gateway" {
 resource "docker_image" "user" {
   name = "${module.ecr_user.repository_url}:latest"
   build {
-    context = ".."
+    context    = ".."
     dockerfile = "Dockerfile"
     build_args = {
       SERVICE : "user"
@@ -185,7 +209,7 @@ resource "docker_image" "user" {
 resource "docker_image" "tweet" {
   name = "${module.ecr_tweet.repository_url}:latest"
   build {
-    context = ".."
+    context    = ".."
     dockerfile = "Dockerfile"
     build_args = {
       SERVICE : "tweet"
@@ -199,7 +223,7 @@ resource "docker_image" "tweet" {
 resource "docker_image" "timeline" {
   name = "${module.ecr_timeline.repository_url}:latest"
   build {
-    context = ".."
+    context    = ".."
     dockerfile = "Dockerfile"
     build_args = {
       SERVICE : "timeline"

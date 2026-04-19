@@ -61,9 +61,34 @@ variable "rate_limit_rpm" {
 variable "consistency_mode" {
   description = "Consistency mode: eventual or strong"
   type        = string
-  default     = "eventual" 
+  default     = "eventual"
   validation {
     condition     = contains(["eventual", "strong"], var.consistency_mode)
     error_message = "Consistency mode must be either 'eventual' or 'strong'."
   }
+}
+
+# Auto-scaling configuration
+variable "enable_autoscaling" {
+  description = "Enable ECS auto-scaling for all services"
+  type        = bool
+  default     = false
+}
+
+variable "autoscaling_min_capacity" {
+  description = "Minimum ECS task count per service"
+  type        = number
+  default     = 1
+}
+
+variable "autoscaling_max_capacity" {
+  description = "Maximum ECS task count per service"
+  type        = number
+  default     = 4
+}
+
+variable "autoscaling_cpu_target" {
+  description = "Target CPU utilization percentage for auto-scaling"
+  type        = number
+  default     = 70
 }

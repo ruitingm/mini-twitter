@@ -189,7 +189,7 @@ source .venv/bin/activate
 Start Locust:
 
 ```bash
-locust -f locustfile.py --host=$BASE_URL
+locust -f experiments/experiment1/locust/locustfile.py --host=$BASE_URL
 ```
 
 Open browser:
@@ -264,7 +264,7 @@ export BASE_URL=...
 
 # 6. Load test
 source .venv/bin/activate
-locust -f locustfile.py --host=$BASE_URL
+locust -f experiments/experiment1/locust/locustfile.py --host=$BASE_URL
 ```
 
 ---

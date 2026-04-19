@@ -120,10 +120,10 @@ resource "aws_security_group" "alb" {
 
 # Target Groups - One for each microservice
 resource "aws_lb_target_group" "gateway" {
-  name     = "${var.service_name}-gateway-tg"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.default.id
+  name        = "${var.service_name}-gateway-tg"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
 
   health_check {
@@ -142,10 +142,10 @@ resource "aws_lb_target_group" "gateway" {
 }
 
 resource "aws_lb_target_group" "user" {
-  name     = "${var.service_name}-user-tg"
-  port     = 8081
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.default.id
+  name        = "${var.service_name}-user-tg"
+  port        = 8081
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
 
   health_check {
@@ -164,10 +164,10 @@ resource "aws_lb_target_group" "user" {
 }
 
 resource "aws_lb_target_group" "tweet" {
-  name     = "${var.service_name}-tweet-tg"
-  port     = 8082
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.default.id
+  name        = "${var.service_name}-tweet-tg"
+  port        = 8082
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
 
   health_check {
@@ -186,10 +186,10 @@ resource "aws_lb_target_group" "tweet" {
 }
 
 resource "aws_lb_target_group" "timeline" {
-  name     = "${var.service_name}-timeline-tg"
-  port     = 8083
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.default.id
+  name        = "${var.service_name}-timeline-tg"
+  port        = 8083
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
 
   health_check {

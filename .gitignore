@@ -1,4 +1,8 @@
+# macOS
 .DS_Store
+**/.DS_Store
+
+# Claude config
 /.claude
 
 # Terraform
@@ -7,30 +11,44 @@ terraform.tfvars
 **/.terraform/
 **/terraform.tfstate
 **/terraform.tfstate.backup
+**/.terraform.lock.hcl
 
-# Docker
+# Docker build artifacts
 **/docker-gs-ping
 **/*.tar
 **/*.zip
 
 # Go build artifacts
+bin/
 **/*.exe
 **/*.out
 **/*.bin
 *.test
+coverage.out
 
-# python cache files
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
 
-# env files
+# Environment files
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 
-# Python virtual environment
+# Python virtual environments
 .venv/
 venv/
 env/
 ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log

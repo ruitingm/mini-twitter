@@ -1,0 +1,77 @@
+
+================================================================================
+  EXPERIMENT 3: FAILURE RESILIENCE TEST ANALYSIS
+================================================================================
+  Results dir: results/experiment3_full/20260415_134533
+  Events logged: 39
+
+================================================================================
+SCENARIO 1: BASELINE (all components healthy)
+================================================================================
+
+  Total Requests:  70475
+  Total Failures:  0
+  Avg Response:    370.9 ms
+  p50:             410 ms
+  p95:             680 ms
+  p99:             800 ms
+  Throughput:      291.3 req/s
+
+  Endpoint                               Reqs  Fails     Avg     p95     p99
+  -------------------------------------------------------------------------
+  GET /v1/timeline/home                 35462      0   490.9     720     850
+  GET /v1/timeline/user/:id             14144      0   449.7     670     790
+  POST /v1/tweets                        7074      0   111.2     190     280
+  POST /v1/tweets/:id/like              13795      0   114.9     210     310
+
+
+================================================================================
+SCENARIO 2: REPLICA FAILURE
+================================================================================
+
+  Failure injected at: 20:53:46 UTC
+  Recovery detected:   20:56:49 UTC (183s)
+
+  Window                     Avg(ms)     p50     p95     p99    Req/s  Fail/s
+  -------------------------------------------------------------------------
+  Pre-failure                  266.1     215     302     377    407.0   0.000
+  During failure               191.3     153     339     609    450.0   1.983
+  Post-recovery                169.0     125     300     454    457.8   0.000
+
+  Impact Analysis:
+    Latency change:     -28.1% (pre: 266.1ms -> during: 191.3ms)
+    Throughput change:   +10.6% (pre: 407.0 -> during: 450.0 req/s)
+    Failure rate:        1.983/s during failure
+    p95 change:          +12.0% (pre: 302ms -> during: 339ms)
+
+  Proposal Targets:
+    Latency increase <25%:   FAIL (28.1%)
+    Error rate <1%:          PASS (0.44%)
+
+
+================================================================================
+SCENARIO 3: REDIS CACHE FLUSH
+================================================================================
+
+  Cache flushed at: 21:04:14 UTC
+
+  Window                     Avg(ms)     p50     p95     p99    Req/s  Fail/s
+  -------------------------------------------------------------------------
+  Pre-flush (warm cache)        97.7      84     164     220    501.7   0.000
+  0-60s post-flush              96.7      84     155     216    505.4   0.000
+  60-180s post-flush            97.6      84     176     239    497.4   0.000
+
+  Impact Analysis:
+    Immediate latency:   -1.0% (1.0x) (pre: 97.7ms -> post: 96.7ms)
+    Throughput change:    +0.7%
+    Failure rate:         0.000/s (immediate)
+    Sustained latency:   1.0x baseline (97.6ms)
+
+  Proposal Expectations:
+    Expected 3-5x latency increase: BELOW EXPECTED (1.0x)
+    System remains functional: PASS
+
+================================================================================
+  END OF ANALYSIS
+================================================================================
+
