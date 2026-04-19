@@ -1,0 +1,29 @@
+{
+    "Label": "DatabaseConnections",
+    "Datapoints": [
+        {
+            "Timestamp": "2026-04-15T13:48:00-07:00",
+            "Average": 51.0,
+            "Maximum": 51.0,
+            "Unit": "Count"
+        },
+        {
+            "Timestamp": "2026-04-15T13:47:00-07:00",
+            "Average": 51.0,
+            "Maximum": 51.0,
+            "Unit": "Count"
+        },
+        {
+            "Timestamp": "2026-04-15T13:46:00-07:00",
+            "Average": 51.0,
+            "Maximum": 51.0,
+            "Unit": "Count"
+        },
+        {
+            "Timestamp": "2026-04-15T13:45:00-07:00",
+            "Average": 28.0,
+            "Maximum": 28.0,
+            "Unit": "Count"
+        }
+    ]
+}

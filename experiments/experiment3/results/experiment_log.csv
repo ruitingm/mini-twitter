@@ -1,0 +1,40 @@
+timestamp,scenario,phase,event
+2026-04-15T20:45:39Z,baseline,START,Starting baseline test: 200 users for 375s total
+2026-04-15T20:45:39Z,baseline,LOCUST,Started (PID: 57747)
+2026-04-15T20:45:39Z,baseline,WARMUP,Ramp-up 15s + warm-up 60s
+2026-04-15T20:46:54Z,baseline,WARMUP,Complete -- load stabilized
+2026-04-15T20:46:54Z,baseline,MEASURE,Measuring steady-state for 180s
+2026-04-15T20:49:54Z,baseline,MEASURE,Complete
+2026-04-15T20:49:54Z,baseline,END,Baseline scenario complete
+2026-04-15T20:49:54Z,baseline,METRICS,Collecting CloudWatch metrics...
+2026-04-15T20:50:00Z,baseline,METRICS,CloudWatch metrics saved
+2026-04-15T20:50:30Z,replica_failure,START,Starting replica failure test: 200 users for 675s total
+2026-04-15T20:50:30Z,replica_failure,LOCUST,Started (PID: 57901)
+2026-04-15T20:50:30Z,replica_failure,WARMUP,Ramp-up 15s + warm-up 60s
+2026-04-15T20:51:46Z,replica_failure,WARMUP,Complete -- load stabilized
+2026-04-15T20:51:46Z,replica_failure,PRE_FAILURE,Measuring pre-failure baseline for 120s
+2026-04-15T20:53:46Z,replica_failure,PRE_FAILURE,Complete
+2026-04-15T20:53:46Z,replica_failure,INJECT,Rebooting RDS replica mini-twitter-postgres-replica2
+2026-04-15T20:53:47Z,replica_failure,INJECT,Reboot command sent at 2026-04-15T20:53:46Z
+2026-04-15T20:53:47Z,replica_failure,DURING_FAILURE,Measuring during failure for 180s
+2026-04-15T20:56:48Z,replica_failure,DURING_FAILURE,Complete
+2026-04-15T20:56:48Z,replica_failure,RECOVERY,Waiting for replica to recover...
+2026-04-15T20:56:49Z,replica_failure,RECOVERY,Replica available after 1s
+2026-04-15T20:56:49Z,replica_failure,POST_RECOVERY,Measuring post-recovery for 179s
+2026-04-15T21:00:23Z,replica_failure,POST_RECOVERY,Complete
+2026-04-15T21:00:23Z,replica_failure,END,Replica failure scenario complete
+2026-04-15T21:00:23Z,replica_failure,METRICS,Collecting CloudWatch metrics...
+2026-04-15T21:00:29Z,replica_failure,METRICS,CloudWatch metrics saved
+2026-04-15T21:00:59Z,redis_flush,START,Starting Redis flush test: 200 users for 495s total
+2026-04-15T21:00:59Z,redis_flush,LOCUST,Started (PID: 58149)
+2026-04-15T21:00:59Z,redis_flush,WARMUP,Ramp-up 15s + warm-up 60s
+2026-04-15T21:02:14Z,redis_flush,WARMUP,Complete -- load stabilized
+2026-04-15T21:02:14Z,redis_flush,PRE_FLUSH,Measuring with warm cache for 120s
+2026-04-15T21:04:14Z,redis_flush,PRE_FLUSH,Complete
+2026-04-15T21:04:14Z,redis_flush,INJECT,Flushing Redis at 2026-04-15T21:04:14Z
+2026-04-15T21:04:19Z,redis_flush,FLUSH,FLUSHALL via ECS Exec (+OK)
+2026-04-15T21:04:19Z,redis_flush,POST_FLUSH,Measuring post-flush for 180s
+2026-04-15T21:07:19Z,redis_flush,POST_FLUSH,Complete
+2026-04-15T21:07:19Z,redis_flush,END,Redis flush scenario complete
+2026-04-15T21:07:19Z,redis_flush,METRICS,Collecting CloudWatch metrics...
+2026-04-15T21:07:25Z,redis_flush,METRICS,CloudWatch metrics saved

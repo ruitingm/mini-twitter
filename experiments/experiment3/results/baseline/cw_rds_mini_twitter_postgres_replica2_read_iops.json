@@ -1,0 +1,25 @@
+{
+    "Label": "ReadIOPS",
+    "Datapoints": [
+        {
+            "Timestamp": "2026-04-15T13:47:00-07:00",
+            "Average": 0.31681979623484685,
+            "Unit": "Count/Second"
+        },
+        {
+            "Timestamp": "2026-04-15T13:46:00-07:00",
+            "Average": 0.36661167491542934,
+            "Unit": "Count/Second"
+        },
+        {
+            "Timestamp": "2026-04-15T13:45:00-07:00",
+            "Average": 6.897815691697629,
+            "Unit": "Count/Second"
+        },
+        {
+            "Timestamp": "2026-04-15T13:48:00-07:00",
+            "Average": 0.0,
+            "Unit": "Count/Second"
+        }
+    ]
+}

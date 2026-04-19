@@ -1,0 +1,41 @@
+{
+    "Label": "CPUUtilization",
+    "Datapoints": [
+        {
+            "Timestamp": "2026-04-15T14:02:00-07:00",
+            "Average": 14.099999999999998,
+            "Maximum": 14.099999999999998,
+            "Unit": "Percent"
+        },
+        {
+            "Timestamp": "2026-04-15T14:01:00-07:00",
+            "Average": 9.4,
+            "Maximum": 9.4,
+            "Unit": "Percent"
+        },
+        {
+            "Timestamp": "2026-04-15T14:05:00-07:00",
+            "Average": 16.068603779868454,
+            "Maximum": 16.068603779868454,
+            "Unit": "Percent"
+        },
+        {
+            "Timestamp": "2026-04-15T14:00:00-07:00",
+            "Average": 16.0563850196013,
+            "Maximum": 16.0563850196013,
+            "Unit": "Percent"
+        },
+        {
+            "Timestamp": "2026-04-15T14:04:00-07:00",
+            "Average": 16.598548669613812,
+            "Maximum": 16.598548669613812,
+            "Unit": "Percent"
+        },
+        {
+            "Timestamp": "2026-04-15T14:03:00-07:00",
+            "Average": 13.662476063608358,
+            "Maximum": 13.662476063608358,
+            "Unit": "Percent"
+        }
+    ]
+}

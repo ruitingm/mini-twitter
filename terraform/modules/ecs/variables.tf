@@ -161,3 +161,28 @@ variable "target_group_arn" {
   default     = ""
   description = "ALB target group ARN for this service"
 }
+
+# Auto-scaling configuration
+variable "enable_autoscaling" {
+  type        = bool
+  default     = false
+  description = "Enable ECS service auto-scaling"
+}
+
+variable "autoscaling_min_capacity" {
+  type        = number
+  default     = 1
+  description = "Minimum number of ECS tasks"
+}
+
+variable "autoscaling_max_capacity" {
+  type        = number
+  default     = 4
+  description = "Maximum number of ECS tasks"
+}
+
+variable "autoscaling_cpu_target" {
+  type        = number
+  default     = 70
+  description = "Target CPU utilization percentage for scaling"
+}

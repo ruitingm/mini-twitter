@@ -1,0 +1,40 @@
+{
+    "Label": "ReadIOPS",
+    "Datapoints": [
+        {
+            "Timestamp": "2026-04-15T14:05:00-07:00",
+            "Average": 1.951203241999233,
+            "Unit": "Count/Second"
+        },
+        {
+            "Timestamp": "2026-04-15T14:00:00-07:00",
+            "Average": 2.1304217569321926,
+            "Unit": "Count/Second"
+        },
+        {
+            "Timestamp": "2026-04-15T14:04:00-07:00",
+            "Average": 0.43312399007146546,
+            "Unit": "Count/Second"
+        },
+        {
+            "Timestamp": "2026-04-15T14:03:00-07:00",
+            "Average": 0.7003501750875438,
+            "Unit": "Count/Second"
+        },
+        {
+            "Timestamp": "2026-04-15T14:02:00-07:00",
+            "Average": 0.5000250012500626,
+            "Unit": "Count/Second"
+        },
+        {
+            "Timestamp": "2026-04-15T14:06:00-07:00",
+            "Average": 1.0828280135936563,
+            "Unit": "Count/Second"
+        },
+        {
+            "Timestamp": "2026-04-15T14:01:00-07:00",
+            "Average": 0.23379703077770914,
+            "Unit": "Count/Second"
+        }
+    ]
+}

@@ -10,17 +10,28 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// replicaEntry pairs a connection pool with a health flag that is updated
+// by a background goroutine. Reader() skips replicas whose healthy flag is false.
+type replicaEntry struct {
+	pool    *pgxpool.Pool
+	healthy atomic.Bool
+}
+
 // DB holds a primary connection pool for writes and zero or more replica pools for reads.
 // Replicas are selected in round-robin order using an atomic counter.
+// A background health checker pings each replica every 3 seconds and marks unhealthy
+// replicas so that Reader() can skip them and fall back to a healthy replica or the primary.
 type DB struct {
 	Primary  *pgxpool.Pool   // receives all INSERT/UPDATE/DELETE queries
-	replicas []*pgxpool.Pool // receive SELECT queries for read scaling
+	replicas []replicaEntry  // receive SELECT queries for read scaling
 	counter  atomic.Uint64   // incremented each time Reader() is called for round-robin
 	log      zerolog.Logger
+	cancel   context.CancelFunc // stops the health-checker goroutine on Close()
 }
 
 // New opens a connection pool to the primary Postgres instance and (optionally) to each replica.
 // Replica connection failures are non-fatal: the replica is skipped and a warning is logged.
+// A background health checker is started to continuously monitor replica availability.
 func New(ctx context.Context, primaryURL string, replicaURLs []string, log zerolog.Logger) (*DB, error) {
 	// Primary pool config
 	primaryConfig, err := pgxpool.ParseConfig(primaryURL)
@@ -45,7 +56,7 @@ func New(ctx context.Context, primaryURL string, replicaURLs []string, log zerol
 	}
 
 	// Attempt to connect to each replica; skip those that are unreachable
-	replicas := make([]*pgxpool.Pool, 0, len(replicaURLs))
+	replicas := make([]replicaEntry, 0, len(replicaURLs))
 	for _, url := range replicaURLs {
 		replicaConfig, err := pgxpool.ParseConfig(url)
 		if err != nil {
@@ -53,10 +64,12 @@ func New(ctx context.Context, primaryURL string, replicaURLs []string, log zerol
 			continue
 		}
 
-		// Tune replica pools for read traffic
+		// Tune replica pools for read traffic and faster failure detection
 		replicaConfig.MaxConns = 20
 		replicaConfig.MinConns = 2
 		replicaConfig.MaxConnLifetime = 30 * time.Minute
+		replicaConfig.HealthCheckPeriod = 5 * time.Second
+		replicaConfig.MaxConnIdleTime = 15 * time.Second
 
 		pool, err := pgxpool.NewWithConfig(ctx, replicaConfig)
 		if err != nil {
@@ -68,45 +81,98 @@ func New(ctx context.Context, primaryURL string, replicaURLs []string, log zerol
 			pool.Close()
 			continue
 		}
-		replicas = append(replicas, pool)
+
+		entry := replicaEntry{pool: pool}
+		entry.healthy.Store(true)
+		replicas = append(replicas, entry)
 	}
 
-	return &DB{
+	hcCtx, cancel := context.WithCancel(context.Background())
+
+	db := &DB{
 		Primary:  primary,
 		replicas: replicas,
 		log:      log,
-	}, nil
+		cancel:   cancel,
+	}
+
+	if len(replicas) > 0 {
+		db.startHealthChecker(hcCtx)
+	}
+
+	return db, nil
 }
 
-// Reader returns a replica pool for reads, falling back to primary if no replicas are available.
-// Replicas are chosen in round-robin order to distribute read load evenly.
+// startHealthChecker spawns a goroutine that pings every replica every 3 seconds.
+// If a replica fails to respond within 2 seconds, it is marked unhealthy.
+// When a previously-unhealthy replica responds again, it is marked healthy.
+func (d *DB) startHealthChecker(ctx context.Context) {
+	go func() {
+		ticker := time.NewTicker(3 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				for i := range d.replicas {
+					pingCtx, pingCancel := context.WithTimeout(ctx, 2*time.Second)
+					err := d.replicas[i].pool.Ping(pingCtx)
+					pingCancel()
+
+					wasHealthy := d.replicas[i].healthy.Load()
+					if err != nil {
+						if wasHealthy {
+							d.replicas[i].healthy.Store(false)
+							d.log.Warn().Int("replica", i).Err(err).Msg("replica health check failed, marking unhealthy")
+						}
+					} else {
+						if !wasHealthy {
+							d.replicas[i].healthy.Store(true)
+							d.log.Info().Int("replica", i).Msg("replica recovered, marking healthy")
+						}
+					}
+				}
+			}
+		}
+	}()
+}
+
+// Reader returns a replica pool for reads, falling back to primary if no healthy replicas are available.
+// Replicas are chosen in round-robin order; unhealthy replicas are skipped.
 func (d *DB) Reader() *pgxpool.Pool {
-	if len(d.replicas) == 0 {
+	n := uint64(len(d.replicas))
+	if n == 0 {
 		// No replicas configured: send reads to the primary
 		return d.Primary
 	}
 
-	// Atomic increment + modulo gives lock-free round-robin selection
-	idx := d.counter.Add(1) % uint64(len(d.replicas))
-	pool := d.replicas[idx]
-
-	// Quick liveness check via Stats (non-blocking) — fall back to primary if down
-	if pool.Stat().TotalConns() == 0 {
-		d.log.Warn().Msg("replica appears down, falling back to primary")
-		return d.Primary
+	// Atomic increment gives lock-free round-robin starting position
+	start := d.counter.Add(1)
+	for i := uint64(0); i < n; i++ {
+		idx := (start + i) % n
+		if d.replicas[idx].healthy.Load() {
+			return d.replicas[idx].pool
+		}
 	}
 
-	return pool
+	// All replicas unhealthy: fall back to primary
+	d.log.Warn().Msg("all replicas unhealthy, falling back to primary")
+	return d.Primary
 }
 
-// Close releases all connection pools (primary and replicas) when the service shuts down.
+// Close releases all connection pools (primary and replicas) and stops the health checker.
 func (d *DB) Close() {
+	if d.cancel != nil {
+		d.cancel()
+	}
 	if d.Primary != nil {
 		d.Primary.Close()
 	}
-	for _, r := range d.replicas {
-		if r != nil {
-			r.Close()
+	for i := range d.replicas {
+		if d.replicas[i].pool != nil {
+			d.replicas[i].pool.Close()
 		}
 	}
 }
